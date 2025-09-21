@@ -17,7 +17,7 @@ class LoginScreen extends StatelessWidget {
               Text("Masuk", style: theme.textTheme.titleLarge),
               const SizedBox(height: 32),
               TextField(
-                obscureText: true,
+                obscureText: false,
                 decoration: const InputDecoration(
                   labelText: "Email",
                   prefixIcon: Icon(Icons.email_outlined),
