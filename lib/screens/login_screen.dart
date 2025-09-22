@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/double_wave_header.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,46 +14,35 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Header dengan wave
-            ClipPath(
-              clipper: WaveClipper(),
-              child: Container(
-                height: 200,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF4894FE), Color(0xFFB3FEB5)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: const Center(
-                  child: Text(
-                    "Masuk",
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(1, 2),
-                          blurRadius: 4,
-                          color: Colors.black26,
-                        ),
-                      ],
+            // ===== Double Wave Header =====
+            const DoubleWaveHeader(),
+
+            // ===== Judul "Masuk" =====
+            const Padding(
+              padding: EdgeInsets.only(top: 8, bottom: 16),
+              child: Text(
+                "Masuk",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4894FE), // biru utama
+                  shadows: [
+                    Shadow(
+                      offset: Offset(1, 4),
+                      blurRadius: 4,
+                      color: Colors.black26,
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
 
-            // Form Login
+            // ===== Form Login =====
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -89,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Ingatkan saya + Lupa sandi
+                  // Ingatkan saya + lupa sandi
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -103,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               });
                             },
                           ),
-                          const Text("Ingatkan saya"),
+                          const Text("Ingat saya"),
                         ],
                       ),
                       TextButton(
@@ -114,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Tombol Login
+                  // ===== Tombol Masuk =====
                   ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
@@ -123,13 +113,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 4,
-                      backgroundColor: const Color(0xFF4894FE),
+                      backgroundColor: const Color(0xFFD9EAFD), // biru muda
                     ),
                     child: const Text(
                       "Masuk",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: Color(0xFF4894FE), // biru utama
                       ),
                     ),
                   ),
@@ -171,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Login via Sosial Media
+                  // Tombol sosial media
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -204,25 +195,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-}
-
-/// Custom wave clipper
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 40);
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height,
-      size.width,
-      size.height - 40,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
