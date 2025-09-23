@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/widgets/bottom_wave_footer.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../widgets/double_wave_header.dart';
 
