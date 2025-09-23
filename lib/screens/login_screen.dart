@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../widgets/double_wave_header.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -162,27 +163,41 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Tombol sosial media
+                  // Tombol sosial media (Google, Facebook, Apple)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // Google
                       CircleAvatar(
                         radius: 24,
                         backgroundColor: Colors.white,
                         child: Icon(
-                          Icons.g_mobiledata,
-                          size: 36,
-                          color: Colors.red,
+                          FontAwesomeIcons.google,
+                          size: 28,
+                          color: Colors.black87,
                         ),
                       ),
                       const SizedBox(width: 16),
+                      // Facebook
                       CircleAvatar(
                         radius: 24,
                         backgroundColor: Colors.white,
                         child: Icon(
-                          Icons.facebook,
-                          size: 32,
+                          FontAwesomeIcons.facebookF,
                           color: Colors.blue,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+
+                      // Apple
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          FontAwesomeIcons.apple,
+                          color: Colors.black,
+                          size: 28,
                         ),
                       ),
                     ],
