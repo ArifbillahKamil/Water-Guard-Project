@@ -40,7 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF4894FE), // biru utama
+                  color: Color(0xFF4894FE),
                   shadows: [
                     Shadow(
                       offset: Offset(1, 4),

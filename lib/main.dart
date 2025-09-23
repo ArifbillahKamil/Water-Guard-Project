@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/register_screen.dart';
+import 'package:flutter_application_1/screens/Worker_Sign_up.dart';
 import 'theme/app_theme.dart';
-import 'screens/login_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +15,7 @@ class MyApp extends StatelessWidget {
       title: 'Pelaporan Perairan',
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      home: const LoginScreen(),
+      home: const WorkerSignUpScreen(),
     );
   }
 }
