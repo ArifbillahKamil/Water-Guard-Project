@@ -6,7 +6,6 @@ class Dashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ==== DATA DUMMY ====
     final reports = <Report>[
       Report(
         coord: '-7.372071280403217, 112.75091130708668',
@@ -35,13 +34,13 @@ class Dashboard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ===== HEADER + GAMBAR ORANG =====
+              // ===== HEADER TANPA GAMBAR ORANG =====
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF7BD5F5), Color(0xFF787FF6)],
+                    colors: [Color(0xFF4894FE), Color(0xFFB3FEB5)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -50,77 +49,64 @@ class Dashboard extends StatelessWidget {
                     bottomRight: Radius.circular(28),
                   ),
                 ),
-                child: Stack(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        const Text(
+                          'Hi, Jeho!',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
-                            Text(
-                              'Hi, Jonathan!',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          children: [
+                            const Icon(
+                              Icons.notifications_none,
+                              color: Colors.white,
                             ),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.notifications_none,
-                                  color: Colors.white,
-                                ),
-                                SizedBox(width: 10),
-                                CircleAvatar(
-                                  backgroundColor: Colors.white,
-                                  radius: 16,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.grey,
-                                    size: 18,
-                                  ),
-                                ),
-                              ],
+                            const SizedBox(width: 10),
+                            CircleAvatar(
+                              backgroundColor: Colors.white,
+                              radius: 16,
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.grey,
+                                size: 18,
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Laporkan\nmasalah\nperairanmu',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            height: 1.2,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Container(
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: const TextField(
-                            decoration: InputDecoration(
-                              hintText: 'Search',
-                              border: InputBorder.none,
-                              icon: Icon(Icons.search, color: Colors.grey),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
-                    Positioned(
-                      right: 0,
-                      bottom: -6,
-                      child: Image.asset(
-                        'assets/hero_worker.png', // gambar orang di header
-                        width: 130,
-                        fit: BoxFit.cover,
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Laporkan\nmasalah\nperairanmu',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        height: 1.2,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: const TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search',
+                          border: InputBorder.none,
+                          icon: Icon(Icons.search, color: Colors.grey),
+                        ),
                       ),
                     ),
                   ],
@@ -183,42 +169,29 @@ class Dashboard extends StatelessWidget {
 
               const SizedBox(height: 18),
 
-              // ===== 3 MENU SAMA UKURAN + OVERLAY 35.3 =====
+              // ===== 3 MENU SAMA UKURAN TANPA ASSET =====
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
-                  children: const [
+                  children: [
                     Expanded(
                       child: _MenuCard(
-                        label: 'laporkan',
-                        asset: 'assets/icons/report.png',
+                        label: 'Laporkan',
                         fallbackIcon: Icons.receipt_long,
-                        overlayAsset:
-                            'assets/image_16.png', // <— padanan @drawable/image_16
-                        overlaySize: 35.3,
-                        overlayAlignment: Alignment.center,
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: _MenuCard(
-                        label: 'Mendaftar\nsukarelawan',
-                        asset: 'assets/icons/volunteer.png',
+                        label: 'Mendaftar\nSukarelawan',
                         fallbackIcon: Icons.volunteer_activism,
-                        overlayAsset: 'assets/image_16.png',
-                        overlaySize: 35.3,
-                        overlayAlignment: Alignment.center,
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: _MenuCard(
-                        label: 'Lokasi\nbermasalah',
-                        asset: 'assets/icons/map.png',
+                        label: 'Lokasi\nBermasalah',
                         fallbackIcon: Icons.map_outlined,
-                        overlayAsset: 'assets/image_16.png',
-                        overlaySize: 35.3,
-                        overlayAlignment: Alignment.center,
                       ),
                     ),
                   ],
@@ -272,8 +245,6 @@ class Dashboard extends StatelessWidget {
   }
 }
 
-/* ===================== MODELS ===================== */
-
 enum ReportStatus { progress, done, pending }
 
 class Report {
@@ -289,32 +260,16 @@ class Report {
   });
 }
 
-/* ===================== WIDGETS ===================== */
-
 class _MenuCard extends StatelessWidget {
-  const _MenuCard({
-    required this.label,
-    required this.asset,
-    this.fallbackIcon,
-    this.overlayAsset,
-    this.overlaySize,
-    this.overlayAlignment,
-  });
+  const _MenuCard({required this.label, this.fallbackIcon});
 
   final String label;
-  final String asset;
   final IconData? fallbackIcon;
-
-  // Overlay (padanan View 35.3dp + background @drawable/image_16)
-  final String? overlayAsset;
-  final double? overlaySize;
-  final Alignment? overlayAlignment;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Kartu ikon (ukuran seragam)
         Container(
           height: 82,
           decoration: BoxDecoration(
@@ -329,44 +284,14 @@ class _MenuCard extends StatelessWidget {
             ],
           ),
           child: Center(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Ikon utama: pakai asset kalau ada, fallback ke Material Icon
-                Image.asset(
-                  asset,
-                  width: 44,
-                  height: 44,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Icon(
-                    fallbackIcon ?? Icons.image_not_supported_outlined,
-                    size: 36,
-                    color: const Color(0xFF5A5F66),
-                  ),
-                ),
-
-                // Overlay 35.3 × 35.3 (pengganti VectorDrawable @drawable/image_16)
-                if (overlayAsset != null)
-                  Align(
-                    alignment: overlayAlignment ?? Alignment.center,
-                    child: SizedBox(
-                      width: overlaySize ?? 35.3,
-                      height: overlaySize ?? 35.3,
-                      child: Image.asset(
-                        overlayAsset!,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      ),
-                    ),
-                  ),
-              ],
+            child: Icon(
+              fallbackIcon ?? Icons.image_not_supported_outlined,
+              size: 36,
+              color: const Color(0xFF5A5F66),
             ),
           ),
         ),
-
         const SizedBox(height: 6),
-
-        // Caption: tinggi dipaku agar “laporkan” (1 baris) sejajar dg label lain (2 baris)
         SizedBox(
           height: 36,
           child: Center(
@@ -391,11 +316,11 @@ class _ReportTile extends StatelessWidget {
   Color get _statusColor {
     switch (report.statusKey) {
       case ReportStatus.progress:
-        return const Color(0xFF2E7DF6); // biru
+        return const Color(0xFF2E7DF6);
       case ReportStatus.done:
-        return const Color(0xFF21B356); // hijau
+        return const Color(0xFF21B356);
       case ReportStatus.pending:
-        return const Color(0xFFE35247); // merah
+        return const Color(0xFFE35247);
     }
   }
 
@@ -406,7 +331,6 @@ class _ReportTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Ikon lokasi bawaan Material (tidak diganti asset)
           Container(
             width: 56,
             height: 56,
@@ -419,7 +343,6 @@ class _ReportTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

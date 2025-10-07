@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../widgets/double_wave_header.dart';
 
 class NotificationPage extends StatelessWidget {
   const NotificationPage({super.key});
@@ -10,64 +10,41 @@ class NotificationPage extends StatelessWidget {
       backgroundColor: const Color(0xfff9f9f9),
       body: Column(
         children: [
-          // ===== HEADER DENGAN WAVE =====
+          // ===== HEADER KONSISTEN TANPA JAM =====
           Stack(
             children: [
-              ClipPath(
-                clipper: WaveClipper(),
-                child: Container(
-                  width: double.infinity,
-                  height: 180,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF4da0ff), Color(0xFF9ef5c0)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                ),
-              ),
+              const DoubleWaveHeader(height: 170),
               SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Stack(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 16,
+                  ),
+                  child: Row(
                     children: [
-                      // Tombol Back
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back,
-                              color: Colors.white, size: 28),
-                          onPressed: () => Navigator.pop(context),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 28,
                         ),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                      // Status Bar Icons
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.alarm, color: Colors.white),
-                            SizedBox(width: 8),
-                            Icon(Icons.bluetooth, color: Colors.white),
-                            SizedBox(width: 8),
-                            Icon(Icons.wifi, color: Colors.white),
-                            SizedBox(width: 8),
-                            Icon(Icons.signal_cellular_alt, color: Colors.white),
+                      const SizedBox(width: 8),
+                      const Text(
+                        "Notifikasi",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black26,
+                              offset: Offset(1, 2),
+                              blurRadius: 2,
+                            ),
                           ],
-                        ),
-                      ),
-                      // Jam
-                      const Positioned(
-                        left: 60,
-                        top: 20,
-                        child: Text(
-                          "5:13 PM",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                          ),
                         ),
                       ),
                     ],
@@ -77,64 +54,44 @@ class NotificationPage extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 20),
-
-          // ===== JUDUL NOTIFIKASI =====
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              "Notifikasi",
-              style: GoogleFonts.poppins(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF4da0ff),
-                letterSpacing: 0.5,
-                shadows: const [
-                  Shadow(
-                    color: Colors.black26,
-                    offset: Offset(1, 2),
-                    blurRadius: 2,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
           // ===== KONTEN NOTIFIKASI =====
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
               children: const [
                 NotificationCard(
-                  title: "⚠️ peringatan akun",
+                  title: "⚠️ Peringatan Akun",
                   titleColor: Colors.red,
-                  subtitleBold: "verifikasi alamat email anda",
+                  subtitleBold: "Verifikasi alamat email anda",
                   message:
-                      "Segera verifikasi alamat email anda demi keamanan dan kenyamanan anda dalam menggunakan aplikasi ini",
+                      "Segera verifikasi alamat email anda demi keamanan dan kenyamanan anda dalam menggunakan aplikasi ini.",
                   icon: Icons.email_rounded,
                   iconColor: Colors.purpleAccent,
+                  bgColor: Color(0xFFFDE8E8),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 16),
                 NotificationCard(
                   title: "Laporanmu sedang dikerjakan",
-                  titleColor: Colors.black,
+                  titleColor: Color(0xFF2E7DF6),
                   subtitleBold: "",
                   message:
-                      "laporanmu mengenai permasalahan banjir karena perairan tersumbat, saat ini sedang ditangani.",
+                      "Laporanmu mengenai permasalahan banjir karena perairan tersumbat, saat ini sedang ditangani.",
                   icon: Icons.settings,
                   iconColor: Colors.blueAccent,
+                  bgColor: Color(0xFFE8F0FE),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 16),
                 NotificationCard(
                   title: "Terimakasih Relawan",
-                  titleColor: Colors.black,
+                  titleColor: Color(0xFF21B356),
                   subtitleBold: "",
                   message:
-                      "kamu sudah menyelesaikan laporan warga setempat dengan baik, klaim reward kamu sekarang.",
+                      "Kamu sudah menyelesaikan laporan warga setempat dengan baik, klaim reward kamu sekarang.",
                   icon: Icons.card_giftcard,
                   iconColor: Colors.green,
+                  bgColor: Color(0xFFE8FEE8),
                 ),
               ],
             ),
@@ -153,6 +110,7 @@ class NotificationCard extends StatelessWidget {
   final String message;
   final IconData icon;
   final Color iconColor;
+  final Color bgColor;
 
   const NotificationCard({
     super.key,
@@ -162,58 +120,74 @@ class NotificationCard extends StatelessWidget {
     required this.message,
     required this.icon,
     required this.iconColor,
+    required this.bgColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: bgColor,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Colors.black26,
-            offset: Offset(2, 4),
-            blurRadius: 6,
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: iconColor.withOpacity(0.18),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(icon, size: 28, color: iconColor),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Judul Kecil
                 Text(
                   title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
+                  style: TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w700,
                     color: titleColor,
                     height: 1.2,
                   ),
                 ),
-                const SizedBox(height: 3),
-                // Subjudul (bold)
-                if (subtitleBold.isNotEmpty)
+                if (subtitleBold.isNotEmpty) ...[
+                  const SizedBox(height: 4),
                   Text(
                     subtitleBold,
-                    style: GoogleFonts.poppins(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w700,
+                    style: const TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
                       color: Colors.black,
                       height: 1.3,
                     ),
                   ),
-                if (subtitleBold.isNotEmpty) const SizedBox(height: 4),
-                // Isi pesan
+                ],
+                const SizedBox(height: 6),
                 Text(
                   message,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
+                  style: TextStyle(
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w400,
                     color: Colors.grey[800],
                     height: 1.5,
@@ -222,36 +196,8 @@ class NotificationCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          Icon(icon, size: 38, color: iconColor),
         ],
       ),
     );
   }
-}
-
-// ===== CLIPPER WAVE =====
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final Path path = Path();
-    path.lineTo(0, size.height - 40);
-
-    final firstControlPoint = Offset(size.width / 4, size.height);
-    final firstEndPoint = Offset(size.width / 2, size.height - 40);
-    final secondControlPoint = Offset(3 * size.width / 4, size.height - 80);
-    final secondEndPoint = Offset(size.width, size.height - 40);
-
-    path.quadraticBezierTo(firstControlPoint.dx, firstControlPoint.dy,
-        firstEndPoint.dx, firstEndPoint.dy);
-    path.quadraticBezierTo(secondControlPoint.dx, secondControlPoint.dy,
-        secondEndPoint.dx, secondEndPoint.dy);
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

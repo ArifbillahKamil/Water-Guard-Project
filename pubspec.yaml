@@ -1,6 +1,6 @@
 name: flutter_application_1
 description: "A new Flutter project."
-publish_to: 'none' 
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -10,10 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-  font_awesome_flutter: ^10.7.0
-  cupertino_icons: ^1.0.8
-  google_fonts: ^6.3.1
+  google_fonts: ^6.1.0
+  font_awesome_flutter: ^10.6.0
 
 dev_dependencies:
   flutter_test:
@@ -23,3 +21,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/hero_worker.png
+    # - assets/icons/report.png
+    # - assets/icons/volunteer.png
+    # - assets/icons/map.png
+    # - assets/image_16.png

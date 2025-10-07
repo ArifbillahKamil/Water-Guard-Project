@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({Key? key}) : super(key: key);
@@ -60,11 +59,13 @@ class _LoadingScreenState extends State<LoadingScreen>
             opacity: _fadeAnimation,
             child: Text(
               "Water Guard",
-              style: GoogleFonts.pacifico(
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 32,
                 letterSpacing: 1,
                 fontWeight: FontWeight.w400,
+                fontFamily:
+                    'Pacifico', // Jika ingin font khusus, pastikan sudah didaftarkan di pubspec.yaml
               ),
             ),
           ),
