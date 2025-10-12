@@ -1,409 +1,272 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class Dashboard extends StatelessWidget {
   const Dashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final reports = <Report>[
-      Report(
-        coord: '-7.372071280403217, 112.75091130708668',
-        statusLabel: 'Sedang di tangani',
-        statusKey: ReportStatus.progress,
-        distance: '1.2 KM',
-      ),
-      Report(
-        coord: '-7.373071655332484, 112.74897132208254',
-        statusLabel: 'Sudah ditangani',
-        statusKey: ReportStatus.done,
-        distance: '1.0 KM',
-      ),
-      Report(
-        coord: '-7.373748788247933, 112.74889545775858',
-        statusLabel: 'Belum terlaksana',
-        statusKey: ReportStatus.pending,
-        distance: '2.1 KM',
-      ),
-    ];
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FA),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ===== HEADER TANPA GAMBAR ORANG =====
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF4894FE), Color(0xFFB3FEB5)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(28),
-                    bottomRight: Radius.circular(28),
-                  ),
+      backgroundColor: const Color(0xFFF9F9F9),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ===== HEADER DENGAN GAMBAR =====
+            Container(
+              width: double.infinity,
+              height: 220,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF4894FE), Color(0xFFB3FEB5)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(28),
+                  bottomRight: Radius.circular(28),
+                ),
+              ),
+              child: Stack(
+                children: [
+                  // Gambar di kanan bawah
+                  Positioned(
+                    right: 10,
+                    bottom: 0,
+                    child: Image.asset(
+                      'assets/hero_worker.png',
+                      height: 180,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  // Teks di kiri atas
+                  Positioned(
+                    left: 16,
+                    top: 40,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Hi, Jeho!',
-                          style: TextStyle(
+                        Text(
+                          "Hi, Jonathan!",
+                          style: GoogleFonts.poppins(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Laporkan\nmasalah perairanmu",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
+                            height: 1.2,
                           ),
                         ),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.notifications_none,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 10),
-                            CircleAvatar(
-                              backgroundColor: Colors.white,
-                              radius: 16,
-                              child: const Icon(
-                                Icons.person,
-                                color: Colors.grey,
-                                size: 18,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Laporkan\nmasalah\nperairanmu',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        height: 1.2,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search',
-                          border: InputBorder.none,
-                          icon: Icon(Icons.search, color: Colors.grey),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              // ===== KOORDINAT =====
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Titik koordinat anda saat ini',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on, color: Colors.black87),
-                        const SizedBox(width: 6),
-                        const Expanded(
-                          child: Text(
-                            '-7.372103200850368, 112.75061827576478',
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              color: Colors.black87,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                        const SizedBox(height: 16),
+                        // Kotak pencarian
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.8,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 5,
+                              )
+                            ],
                           ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Clipboard.setData(
-                              const ClipboardData(
-                                text: '-7.372103200850368, 112.75061827576478',
-                              ),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Koordinat disalin ke clipboard!',
+                          child: const Row(
+                            children: [
+                              Icon(Icons.search, color: Colors.grey),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  decoration: InputDecoration(
+                                    hintText: "Search",
+                                    border: InputBorder.none,
+                                  ),
                                 ),
-                                duration: Duration(seconds: 1),
                               ),
-                            );
-                          },
-                          child: const Icon(Icons.copy, size: 18),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              // ===== 3 MENU SAMA UKURAN TANPA ASSET =====
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _MenuCard(
-                        label: 'Laporkan',
-                        fallbackIcon: Icons.receipt_long,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _MenuCard(
-                        label: 'Mendaftar\nSukarelawan',
-                        fallbackIcon: Icons.volunteer_activism,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _MenuCard(
-                        label: 'Lokasi\nBermasalah',
-                        fallbackIcon: Icons.map_outlined,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 22),
-
-              // ===== LIST LAPORAN =====
-              if (reports.isNotEmpty) ...[
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 14),
-                  padding: const EdgeInsets.fromLTRB(14, 16, 14, 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(.05),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ===== TITIK KOORDINAT =====
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Titik koordinat anda saat ini",
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 6),
+                      const Icon(Icons.location_pin, color: Colors.black54),
+                      const SizedBox(width: 6),
+                      Expanded(
                         child: Text(
-                          'Laporan di daerahmu saat ini',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF111111),
-                          ),
+                          "-7.372103200850368, 112.75061827576478",
+                          style: GoogleFonts.poppins(fontSize: 13),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      ...reports.map((r) => _ReportTile(report: r)).toList(),
+                      const Icon(Icons.copy, size: 16, color: Colors.black45),
                     ],
                   ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ===== 3 MENU UTAMA =====
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _mainButton(FontAwesomeIcons.fileCircleExclamation, "Laporkan"),
+                  _mainButton(FontAwesomeIcons.userPlus, "Mendaftar\nsukarelawan"),
+                  _mainButton(FontAwesomeIcons.mapLocationDot, "Lokasi\nbermasalah"),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ===== LAPORAN =====
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Laporan di daerahmu saat ini",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
                 ),
-                const SizedBox(height: 26),
-              ],
-            ],
-          ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ===== LIST LAPORAN =====
+            _reportCard(
+              color: Colors.blue,
+              icon: FontAwesomeIcons.userShield,
+              title: "Sedang ditangani",
+              coord: "-7.372071280403217, 112.75091130708668 · 1.2 KM",
+            ),
+            _reportCard(
+              color: Colors.green,
+              icon: FontAwesomeIcons.userCheck,
+              title: "Sudah ditangani",
+              coord: "-7.373071655332484, 112.74897132208254 · 10 KM",
+            ),
+            _reportCard(
+              color: Colors.red,
+              icon: FontAwesomeIcons.userSlash, // Ganti userTimes -> userSlash
+              title: "Belum terlaksana",
+              coord: "-7.373748789247933, 112.74889545757858 · 2.1 KM",
+            ),
+
+            const SizedBox(height: 30),
+          ],
         ),
       ),
     );
   }
-}
 
-enum ReportStatus { progress, done, pending }
-
-class Report {
-  final String coord;
-  final String statusLabel;
-  final ReportStatus statusKey;
-  final String distance;
-  Report({
-    required this.coord,
-    required this.statusLabel,
-    required this.statusKey,
-    required this.distance,
-  });
-}
-
-class _MenuCard extends StatelessWidget {
-  const _MenuCard({required this.label, this.fallbackIcon});
-
-  final String label;
-  final IconData? fallbackIcon;
-
-  @override
-  Widget build(BuildContext context) {
+  // ====== WIDGET TOMBOL MENU UTAMA ======
+  Widget _mainButton(IconData icon, String text) {
     return Column(
       children: [
         Container(
-          height: 82,
+          height: 60,
+          width: 60,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(.06),
-                blurRadius: 12,
-                offset: const Offset(0, 8),
+                color: Colors.grey.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
-          child: Center(
-            child: Icon(
-              fallbackIcon ?? Icons.image_not_supported_outlined,
-              size: 36,
-              color: const Color(0xFF5A5F66),
-            ),
-          ),
+          child: Icon(icon, color: Colors.black87, size: 28),
         ),
-        const SizedBox(height: 6),
-        SizedBox(
-          height: 36,
-          child: Center(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13.5, color: Colors.black87),
-            ),
+        const SizedBox(height: 8),
+        Text(
+          text,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.black87,
+            height: 1.3,
           ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
-}
 
-class _ReportTile extends StatelessWidget {
-  const _ReportTile({required this.report});
-  final Report report;
-
-  Color get _statusColor {
-    switch (report.statusKey) {
-      case ReportStatus.progress:
-        return const Color(0xFF2E7DF6);
-      case ReportStatus.done:
-        return const Color(0xFF21B356);
-      case ReportStatus.pending:
-        return const Color(0xFFE35247);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: _statusColor.withOpacity(.18),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: Icon(Icons.location_on, size: 28, color: _statusColor),
-            ),
+  // ====== WIDGET KARTU LAPORAN ======
+  Widget _reportCard({
+    required Color color,
+    required IconData icon,
+    required String title,
+    required String coord,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 28),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        report.coord,
-                        style: const TextStyle(
-                          fontSize: 14.2,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Clipboard.setData(ClipboardData(text: report.coord));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Koordinat disalin'),
-                            duration: Duration(seconds: 1),
-                          ),
-                        );
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.only(left: 8.0),
-                        child: Icon(Icons.copy, size: 18),
-                      ),
-                    ),
-                  ],
+                Text(
+                  coord,
+                  style: GoogleFonts.poppins(fontSize: 13),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  report.statusLabel,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: _statusColor,
+                  title,
+                  style: GoogleFonts.poppins(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
                   ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: Color(0xFF6E7681),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      report.distance,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF6E7681),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
