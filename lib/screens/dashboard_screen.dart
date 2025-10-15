@@ -1,277 +1,539 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/report_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 
+// =============================
+// DASHBOARD SCREEN
+// =============================
 class Dashboard extends StatelessWidget {
   const Dashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final padding = width * 0.05;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ===== HEADER DENGAN GAMBAR =====
-            Container(
-              width: double.infinity,
-              height: 220,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF4894FE), Color(0xFFB3FEB5)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(28),
-                  bottomRight: Radius.circular(28),
+      backgroundColor: const Color(0xFFF3F5F8),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // === HEADER ===
+              const _DashboardHeader(),
+
+              const SizedBox(height: 40),
+
+              // === KOORDINAT ===
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: padding),
+                child: const _CoordinateRow(
+                  coordinate: '-7.372103200850368, 112.75061827576478',
                 ),
               ),
-              child: Stack(
-                children: [
-                  // Gambar di kanan bawah
-                  Positioned(
-                    right: 10,
-                    bottom: 0,
-                    child: Image.asset(
-                      'assets/hero_worker.png',
-                      height: 180,
-                      fit: BoxFit.contain,
+
+              const SizedBox(height: 20),
+
+              // === MENU UTAMA ===
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: padding),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _RoundMenu(
+                      icon: FontAwesomeIcons.fileCircleExclamation,
+                      label: 'Laporkan',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ReportFormScreen(),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                  // Teks di kiri atas
-                  Positioned(
-                    left: 16,
-                    top: 40,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Hi, Jonathan!",
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 14,
+                    _RoundMenu(
+                      icon: FontAwesomeIcons.userPlus,
+                      label: 'Mendaftar\nSukarelawan',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const DummyPage(title: 'Daftar Sukarelawan'),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Laporkan\nmasalah perairanmu",
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // Kotak pencarian
-                        Container(
-                          width: MediaQuery.of(context).size.width * 0.8,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 5,
-                              )
-                            ],
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.search, color: Colors.grey),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: TextField(
-                                  decoration: InputDecoration(
-                                    hintText: "Search",
-                                    border: InputBorder.none,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
+                    _RoundMenu(
+                      icon: FontAwesomeIcons.mapLocationDot,
+                      label: 'Lokasi\nBermasalah',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const DummyPage(title: 'Lokasi Bermasalah'),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // === LAPORAN DAERAH ===
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: padding),
+                child: const _ReportList(),
+              ),
+
+              const SizedBox(height: 28),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =============================
+// HEADER
+// =============================
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Background Gradient
+        Container(
+          width: double.infinity,
+          height: 240,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF4894FE), Color(0xFFB3FEB5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(28),
+              bottomRight: Radius.circular(28),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+        ),
+
+        // Icon notifikasi & avatar
+        Positioned(
+          top: 18,
+          right: 18,
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DummyPage(title: 'Notifikasi'),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.notifications_none, color: Colors.white),
+              ),
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DummyPage(title: 'Profil Pengguna'),
+                    ),
+                  );
+                },
+                child: const CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Colors.white24,
+                  child: Icon(Icons.person, color: Colors.white, size: 18),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Greeting dan teks utama
+        Positioned(
+          left: 18,
+          top: 22,
+          right: 160,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Hi,',
+                style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Jonathan!',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Laporkan\nmasalah perairanmu',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  height: 1.05,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Hero image kanan
+        Positioned(
+          right: 12,
+          bottom: 8,
+          child: Image.asset(
+            'assets/hero_worker.png',
+            height: 160,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) =>
+                const Icon(Icons.person, size: 80, color: Colors.white24),
+          ),
+        ),
+
+        // Kotak pencarian
+        Positioned(
+          left: 20,
+          right: 20,
+          bottom: 14,
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(14),
+            color: Colors.transparent,
+            child: Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ===== TITIK KOORDINAT =====
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    "Titik koordinat anda saat ini",
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_pin, color: Colors.black54),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          "-7.372103200850368, 112.75061827576478",
-                          style: GoogleFonts.poppins(fontSize: 13),
+                  const Icon(Icons.search, color: Color(0xFF9AA3B2)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration.collapsed(
+                        hintText: 'Search',
+                        hintStyle: GoogleFonts.poppins(
+                          color: const Color(0xFF9AA3B2),
                         ),
                       ),
-                      const Icon(Icons.copy, size: 16, color: Colors.black45),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
-            const SizedBox(height: 20),
+// =============================
+// KOORDINAT ROW
+// =============================
+class _CoordinateRow extends StatelessWidget {
+  final String coordinate;
+  const _CoordinateRow({required this.coordinate});
 
-            // ===== 3 MENU UTAMA =====
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _mainButton(FontAwesomeIcons.fileCircleExclamation, "Laporkan"),
-                  _mainButton(FontAwesomeIcons.userPlus, "Mendaftar\nsukarelawan"),
-                  _mainButton(FontAwesomeIcons.mapLocationDot, "Lokasi\nbermasalah"),
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(Icons.location_on_outlined, color: Color(0xFF1F2937)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            coordinate,
+            style: GoogleFonts.poppins(
+              color: const Color(0xFF111827),
+              fontSize: 13,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: coordinate));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Koordinat disalin')));
+          },
+          child: const Icon(Icons.copy, size: 18, color: Color(0xFF64748B)),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================
+// MENU BULAT
+// =============================
+class _RoundMenu extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _RoundMenu({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Container(
+              height: 86,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 8),
+                  ),
                 ],
               ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // ===== LAPORAN =====
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                "Laporan di daerahmu saat ini",
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
+              child: Center(
+                child: Icon(icon, size: 28, color: const Color(0xFF111827)),
               ),
             ),
-
-            const SizedBox(height: 12),
-
-            // ===== LIST LAPORAN =====
-            _reportCard(
-              color: Colors.blue,
-              icon: FontAwesomeIcons.userShield,
-              title: "Sedang ditangani",
-              coord: "-7.372071280403217, 112.75091130708668 · 1.2 KM",
+            const SizedBox(height: 10),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: const Color(0xFF111827),
+              ),
             ),
-            _reportCard(
-              color: Colors.green,
-              icon: FontAwesomeIcons.userCheck,
-              title: "Sudah ditangani",
-              coord: "-7.373071655332484, 112.74897132208254 · 10 KM",
-            ),
-            _reportCard(
-              color: Colors.red,
-              icon: FontAwesomeIcons.userSlash, // Ganti userTimes -> userSlash
-              title: "Belum terlaksana",
-              coord: "-7.373748789247933, 112.74889545757858 · 2.1 KM",
-            ),
-
-            const SizedBox(height: 30),
           ],
         ),
       ),
     );
   }
+}
 
-  // ====== WIDGET TOMBOL MENU UTAMA ======
-  Widget _mainButton(IconData icon, String text) {
-    return Column(
+// =============================
+// DAFTAR LAPORAN
+// =============================
+class _ReportList extends StatelessWidget {
+  const _ReportList();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Laporan di daerahmu saat ini',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _ReportRow(
+            color: const Color(0xFFBEE3FF),
+            statusColor: const Color(0xFF2E7DF6),
+            coord: '-7.372071280403217, 112.75091130708668',
+            statusLabel: 'Sedang ditangani',
+            distance: '1.2 KM',
+          ),
+          const SizedBox(height: 8),
+          _ReportRow(
+            color: const Color(0xFFDFF7E6),
+            statusColor: const Color(0xFF21B356),
+            coord: '-7.373071655332484, 112.74897132208254',
+            statusLabel: 'Sudah ditangani',
+            distance: '1.0 KM',
+          ),
+          const SizedBox(height: 8),
+          _ReportRow(
+            color: const Color(0xFFFEECEB),
+            statusColor: const Color(0xFFE35247),
+            coord: '-7.373748788247933, 112.74889545775858',
+            statusLabel: 'Belum terlaksana',
+            distance: '2.1 KM',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================
+// SATU ROW LAPORAN
+// =============================
+class _ReportRow extends StatelessWidget {
+  final Color color;
+  final Color statusColor;
+  final String coord;
+  final String statusLabel;
+  final String distance;
+
+  const _ReportRow({
+    required this.color,
+    required this.statusColor,
+    required this.coord,
+    required this.statusLabel,
+    required this.distance,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
       children: [
         Container(
-          height: 60,
-          width: 60,
+          width: 46,
+          height: 46,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
+            color: color,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Icon(Icons.location_on, color: statusColor, size: 22),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                coord,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: const Color(0xFF0F172A),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      statusLabel,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_outlined,
+                        size: 12,
+                        color: Color(0xFF6B7280),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        distance,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
-          child: Icon(icon, color: Colors.black87, size: 28),
         ),
-        const SizedBox(height: 8),
-        Text(
-          text,
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            color: Colors.black87,
-            height: 1.3,
-          ),
-          textAlign: TextAlign.center,
+        const SizedBox(width: 6),
+        GestureDetector(
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: coord));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Koordinat disalin')));
+          },
+          child: const Icon(Icons.copy, size: 18, color: Color(0xFF94A3B8)),
         ),
       ],
     );
   }
+}
 
-  // ====== WIDGET KARTU LAPORAN ======
-  Widget _reportCard({
-    required Color color,
-    required IconData icon,
-    required String title,
-    required String coord,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  coord,
-                  style: GoogleFonts.poppins(fontSize: 13),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+// =============================
+// DUMMY PAGE (sementara)
+// =============================
+class DummyPage extends StatelessWidget {
+  final String title;
+  const DummyPage({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Text(
+          '$title sedang dikembangkan...',
+          style: GoogleFonts.poppins(fontSize: 16),
+        ),
       ),
     );
   }

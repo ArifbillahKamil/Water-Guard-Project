@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/widgets/bottom_wave_footer.dart';
+import 'package:flutter_application_1/screens/dashboard_screen.dart';
+import 'package:flutter_application_1/screens/forgot_password.dart';
+import 'package:flutter_application_1/screens/register_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../widgets/double_wave_header.dart';
 
@@ -17,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -81,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Ingatkan saya + lupa sandi
+                  // Ingat saya + lupa sandi
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -99,7 +102,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ForgotPasswordScreen(),
+                            ),
+                          );
+                        },
                         child: const Text("Lupa sandi?"),
                       ),
                     ],
@@ -108,7 +118,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // ===== Tombol Masuk =====
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const Dashboard()),
+                      );
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   const SnackBar(
+                      //     content: Text("Fitur login belum diimplementasi."),
+                      //   ),
+                      // );
+                    },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -128,17 +148,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   const SizedBox(height: 16),
+
+                  // ===== Navigasi ke register =====
                   Center(
                     child: GestureDetector(
                       onTap: () {
-                        // TODO: Navigasi ke RegisterScreen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
+                          ),
+                        );
                       },
                       child: const Text.rich(
                         TextSpan(
                           text: "Tidak memiliki akun? ",
                           children: [
                             TextSpan(
-                              text: "mendaftar",
+                              text: "Mendaftar",
                               style: TextStyle(
                                 color: Color(0xFF4894FE),
                                 fontWeight: FontWeight.bold,
@@ -149,6 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 24),
 
                   // Divider
@@ -164,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Tombol sosial media (Google, Facebook, Apple)
+                  // ===== Tombol sosial media =====
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -179,6 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(width: 16),
+
                       // Facebook
                       CircleAvatar(
                         radius: 24,
