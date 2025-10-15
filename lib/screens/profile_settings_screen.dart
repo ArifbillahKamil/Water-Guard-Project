@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/dashboard_screen.dart';
 import 'package:flutter_application_1/widgets/bottom_wave_footer.dart';
 
 class ProfileSettingsScreen extends StatelessWidget {
@@ -20,7 +21,13 @@ class ProfileSettingsScreen extends StatelessWidget {
                 // Tombol back
                 IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.pop(context),
+                  color: Colors.black54,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const Dashboard()),
+                    );
+                  },
                 ),
 
                 // Profile Card

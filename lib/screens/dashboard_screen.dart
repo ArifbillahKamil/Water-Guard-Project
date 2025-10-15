@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/Worker_Sign_up.dart';
+import 'package:flutter_application_1/screens/notification_screen.dart';
+import 'package:flutter_application_1/screens/profile_screen.dart';
+import 'package:flutter_application_1/screens/profile_settings_screen.dart';
 import 'package:flutter_application_1/screens/report_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -61,8 +65,7 @@ class Dashboard extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>
-                                const DummyPage(title: 'Daftar Sukarelawan'),
+                            builder: (_) => const WorkerSignUpScreen(),
                           ),
                         );
                       },
@@ -146,9 +149,7 @@ class _DashboardHeader extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const DummyPage(title: 'Notifikasi'),
-                    ),
+                    MaterialPageRoute(builder: (_) => const NotificationPage()),
                   );
                 },
                 icon: const Icon(Icons.notifications_none, color: Colors.white),
@@ -159,7 +160,7 @@ class _DashboardHeader extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const DummyPage(title: 'Profil Pengguna'),
+                      builder: (_) => const ProfileSettingsScreen(),
                     ),
                   );
                 },

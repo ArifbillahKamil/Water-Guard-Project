@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/dashboard_screen.dart';
 import '../widgets/double_wave_header.dart';
 
 class NotificationPage extends StatelessWidget {
@@ -31,7 +32,14 @@ class NotificationPage extends StatelessWidget {
                             Icons.arrow_back,
                             color: Colors.white,
                           ),
-                          onPressed: () => Navigator.maybePop(context),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const Dashboard(),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),

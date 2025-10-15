@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/dashboard_screen.dart';
+import 'package:flutter_application_1/screens/profile_settings_screen.dart';
 import '../widgets/double_wave_header.dart';
 import '../widgets/bottom_wave_footer.dart';
 
@@ -126,9 +128,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: IconButton(
                           icon: const Icon(
                             Icons.arrow_back,
-                            color: Colors.black87,
+                            color: Colors.white,
                           ),
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ProfileSettingsScreen(),
+                              ),
+                            );
+                          },
                         ),
                       ),
                       SizedBox(height: gap),
