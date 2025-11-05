@@ -6,6 +6,7 @@ import 'package:flutter_application_1/screens/forgot_password.dart';
 import 'package:flutter_application_1/screens/loading_screen.dart';
 import 'package:flutter_application_1/screens/login_screen.dart';
 import 'package:flutter_application_1/screens/notification_screen.dart';
+import 'package:flutter_application_1/screens/privasi_page.dart';
 import 'package:flutter_application_1/screens/profile_screen.dart';
 import 'package:flutter_application_1/screens/profile_settings_screen.dart';
 import 'package:flutter_application_1/screens/register_screen.dart';
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
       title: 'Pelaporan Perairan',
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      home: const BantuanScreen(),
+      home: const PrivasiPage(),
     );
   }
 }
