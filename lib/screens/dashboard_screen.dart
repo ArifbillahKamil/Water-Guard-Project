@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/Worker_Sign_up.dart';
+import 'package:flutter_application_1/screens/lokasi_bermasalah.dart';
 import 'package:flutter_application_1/screens/notification_screen.dart';
 import 'package:flutter_application_1/screens/profile_screen.dart';
 import 'package:flutter_application_1/screens/profile_settings_screen.dart';
@@ -77,8 +78,7 @@ class Dashboard extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>
-                                const DummyPage(title: 'Lokasi Bermasalah'),
+                            builder: (_) => const PetaLaporanScreen(),
                           ),
                         );
                       },

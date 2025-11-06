@@ -119,15 +119,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   // ===== Tombol Masuk =====
                   ElevatedButton(
                     onPressed: () {
+                      // tutup keyboard kalau terbuka
+                      FocusScope.of(context).unfocus();
+                      // navigasi ke Dashboard, menggantikan layar login
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => const Dashboard()),
                       );
-                      // ScaffoldMessenger.of(context).showSnackBar(
-                      //   const SnackBar(
-                      //     content: Text("Fitur login belum diimplementasi."),
-                      //   ),
-                      // );
                     },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -135,14 +133,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 4,
-                      backgroundColor: const Color(0xFFD9EAFD), // biru muda
+                      backgroundColor: const Color(0xFFD9EAFD),
                     ),
                     child: const Text(
                       "Masuk",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF4894FE), // biru utama
+                        color: Color(0xFF4894FE),
                       ),
                     ),
                   ),

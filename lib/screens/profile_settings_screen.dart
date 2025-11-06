@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/bahasa_screen.dart';
 import 'package:flutter_application_1/screens/dashboard_screen.dart';
+import 'package:flutter_application_1/screens/datapenyimpanan_screen.dart';
 import 'package:flutter_application_1/widgets/bottom_wave_footer.dart';
+import 'package:flutter_application_1/screens/profile_screen.dart';
+import 'package:flutter_application_1/screens/notification_screen.dart';
+import 'package:flutter_application_1/screens/bantuan_screen.dart';
+import 'package:flutter_application_1/screens/privasi_page.dart';
 
 class ProfileSettingsScreen extends StatelessWidget {
   const ProfileSettingsScreen({super.key});
@@ -65,36 +71,84 @@ class ProfileSettingsScreen extends StatelessWidget {
                 // Menu list
                 Expanded(
                   child: ListView(
-                    children: const [
+                    children: [
                       _SettingsItem(
                         icon: Icons.person_add_alt,
                         title: "Akun",
                         subtitle: "Edit profile, email, data diri",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _SettingsItem(
                         icon: Icons.lock_outline,
                         title: "Privasi",
                         subtitle: "Privasi data diri kamu",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PrivasiPage(),
+                            ),
+                          );
+                        },
                       ),
                       _SettingsItem(
                         icon: Icons.notifications_none,
                         title: "Notifikasi",
                         subtitle: "Pesan, laporan, notifikasi",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationPage(),
+                            ),
+                          );
+                        },
                       ),
                       _SettingsItem(
                         icon: Icons.cloud_download_outlined,
                         title: "Data dan penyimpanan",
                         subtitle: "Penggunaan internet, penyimpanan",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const DataStorageScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _SettingsItem(
                         icon: Icons.language,
                         title: "Bahasa aplikasi",
                         subtitle: "Bahasa Indonesia",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LanguageSettingsScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _SettingsItem(
                         icon: Icons.help_outline,
                         title: "Help",
                         subtitle: "Help centre, contact us, privacy policy",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const BantuanScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -113,11 +167,13 @@ class _SettingsItem extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final VoidCallback? onTap;
 
   const _SettingsItem({
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.onTap,
   });
 
   @override
@@ -147,12 +203,37 @@ class _SettingsItem extends StatelessWidget {
             subtitle,
             style: const TextStyle(color: Colors.black54),
           ),
-          onTap: () {
-            // TODO: navigasi ke halaman terkait
-          },
+          onTap: onTap,
         ),
         const Divider(height: 1),
       ],
+    );
+  }
+}
+
+// Simple placeholder pages for items that didn't have dedicated screens yet
+class _StorageSettingsPage extends StatelessWidget {
+  const _StorageSettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Data & Penyimpanan')),
+      body: const Center(
+        child: Text('Pengaturan data & penyimpanan (placeholder)'),
+      ),
+    );
+  }
+}
+
+class _LanguageSettingsPage extends StatelessWidget {
+  const _LanguageSettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Bahasa Aplikasi')),
+      body: const Center(child: Text('Pilih bahasa aplikasi (placeholder)')),
     );
   }
 }
