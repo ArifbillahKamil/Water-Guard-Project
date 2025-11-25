@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/dashboard_screen.dart';
+import 'package:file_picker/file_picker.dart'; // GANTI image_picker JADI file_picker
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/screens/dashboard_screen.dart'; // Pastikan path benar
 import '../widgets/double_wave_header.dart';
 
 class WorkerSignUpScreen extends StatefulWidget {
@@ -17,6 +20,9 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
   final TextEditingController educationController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+
+  // Variabel untuk menyimpan File CV
+  File? _cvFile;
   String? cvFileName;
 
   @override
@@ -29,29 +35,63 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
     super.dispose();
   }
 
+  // --- FUNGSI PILIH FILE PDF ---
+  Future<void> _pickCVFile() async {
+    try {
+      // Membuka File Explorer bawaan HP
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'], // Hanya boleh PDF atau Word
+      );
+
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          _cvFile = File(result.files.single.path!);
+          cvFileName = result.files.single.name; // Ambil nama file
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('File CV berhasil dipilih')),
+          );
+        }
+      } else {
+        // User membatalkan pemilihan file
+      }
+    } on PlatformException catch (e) {
+      debugPrint("Error Permission: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal akses penyimpanan: ${e.message}')),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error Pick File: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const double headerHeight = 150.0;
     const double horizontalPadding = 24.0;
-    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       body: Stack(
         children: [
-          // header wave
+          // 1. Header Wave
           const SizedBox(
             height: headerHeight,
             width: double.infinity,
             child: DoubleWaveHeader(),
           ),
 
-          // main content (turunkan dengan padding top agar tidak menabrak header)
+          // 2. Main Content
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
                 horizontalPadding,
-                headerHeight - 60, // turunkan form supaya tidak menabrak header
+                headerHeight - 60,
                 horizontalPadding,
                 24,
               ),
@@ -210,49 +250,79 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty)
+                            if (value == null || value.isEmpty) {
                               return "Wajib diisi";
-                            if (!value.contains('@'))
+                            }
+                            if (!value.contains('@')) {
                               return "Email tidak valid";
+                            }
                             return null;
                           },
                         ),
                         const SizedBox(height: 18),
 
-                        // Upload CV
+                        // --- Upload CV (PDF/DOC) ---
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                // TODO: implement upload file
-                                setState(() {
-                                  cvFileName = "cv.pdf";
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFD9EAFD),
-                                minimumSize: const Size(100, 44),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                            ElevatedButton.icon(
+                              onPressed:
+                                  _pickCVFile, // Panggil fungsi file picker
+                              icon: const Icon(
+                                Icons.upload_file,
+                                color: Color(0xFF4894FE),
                               ),
-                              child: const Text(
-                                "Unggah",
+                              label: const Text(
+                                "Upload CV",
                                 style: TextStyle(
                                   color: Color(0xFF4894FE),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFD9EAFD),
+                                minimumSize: const Size(120, 44),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Text(
-                                cvFileName ?? "Unggah CV",
-                                style: const TextStyle(color: Colors.black54),
-                                overflow: TextOverflow.ellipsis,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    cvFileName ?? "Belum ada file dipilih",
+                                    style: TextStyle(
+                                      color: _cvFile != null
+                                          ? Colors.black87
+                                          : Colors.black54,
+                                      fontWeight: _cvFile != null
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      fontSize: 13,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                  if (_cvFile != null)
+                                    const Text(
+                                      "Siap diunggah",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
+                            if (_cvFile != null)
+                              const Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 24,
+                              ),
                           ],
                         ),
                         const SizedBox(height: 22),
@@ -263,12 +333,24 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                           child: ElevatedButton(
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
-                                // TODO: aksi daftar
+                                // Validasi File CV
+                                if (_cvFile == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Wajib upload CV (PDF/Word)',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                // TODO: Aksi daftar
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                      'Pendaftaran berhasil (dummy).',
-                                    ),
+                                    content: Text('Pendaftaran berhasil!'),
+                                    backgroundColor: Colors.green,
                                   ),
                                 );
                               }
@@ -300,7 +382,7 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
             ),
           ),
 
-          // Back button di atas header
+          // 3. Smart Back Button
           Positioned(
             top: 28,
             left: 8,
@@ -308,11 +390,14 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
               child: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () {
-                  // kembali ke dashboard (ganti behavior jika ingin pop)
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const Dashboard()),
-                  );
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  } else {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const Dashboard()),
+                    );
+                  }
                 },
               ),
             ),

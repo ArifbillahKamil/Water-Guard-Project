@@ -46,6 +46,7 @@ class Dashboard extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: padding),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _RoundMenu(
                       icon: FontAwesomeIcons.fileCircleExclamation,
@@ -118,7 +119,7 @@ class _DashboardHeader extends StatelessWidget {
         // Background Gradient
         Container(
           width: double.infinity,
-          height: 240,
+          height: 280,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF4894FE), Color(0xFFB3FEB5)],
@@ -141,7 +142,7 @@ class _DashboardHeader extends StatelessWidget {
 
         // Icon notifikasi & avatar
         Positioned(
-          top: 18,
+          top: 38,
           right: 18,
           child: Row(
             children: [
@@ -176,8 +177,8 @@ class _DashboardHeader extends StatelessWidget {
 
         // Greeting dan teks utama
         Positioned(
-          left: 18,
-          top: 22,
+          left: 28,
+          top: 50,
           right: 160,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

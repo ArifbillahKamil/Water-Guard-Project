@@ -2,7 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter/services.dart';
 import '../widgets/double_wave_header.dart';
+import '../screens/dashboard_screen.dart';
 
 class ReportFormScreen extends StatefulWidget {
   const ReportFormScreen({super.key});
@@ -26,34 +29,148 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
 
   final _judulController = TextEditingController();
   final _deskripsiController = TextEditingController();
-  final _koordinatController = TextEditingController(
-    text: '-7.372103200850368, 112.75061827576478',
-  );
+  final _koordinatController = TextEditingController();
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
-    );
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
 
-    if (pickedFile != null) {
+      if (pickedFile != null) {
+        setState(() {
+          _image = File(pickedFile.path);
+        });
+      }
+    } on PlatformException catch (e, st) {
+      debugPrint('PlatformException _pickImage: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memilih gambar: ${e.message ?? e.toString()}'),
+          ),
+        );
+      }
+    } catch (e, st) {
+      debugPrint('Error _pickImage: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Terjadi kesalahan saat memilih gambar'),
+          ),
+        );
+      }
+    }
+  }
+
+  // share location: ambil koordinat dari device dan isi controller
+  Future<void> _shareLocation() async {
+    try {
+      // 1. Cek Service GPS Nyala/Tidak
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Layanan lokasi (GPS) mati. Mohon nyalakan.'),
+            ),
+          );
+        }
+        return;
+      }
+
+      // 2. Cek Status Izin
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Izin lokasi ditolak.')),
+            );
+          }
+          return;
+        }
+      }
+
+      // 3. LOGIKA "DENIED FOREVER" (PERBAIKAN UTAMA DISINI)
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Izin lokasi ditolak permanen. Mohon buka pengaturan untuk mengizinkan.',
+              ),
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'BUKA SETTINGS',
+                onPressed: () {
+                  // Membuka halaman pengaturan aplikasi
+                  Geolocator.openAppSettings();
+                },
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      // 4. Ambil Posisi jika aman
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final coords =
+          '${pos.latitude.toStringAsFixed(6)}, ${pos.longitude.toStringAsFixed(6)}';
+
       setState(() {
-        _image = File(pickedFile.path);
+        _koordinatController.text = coords;
       });
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Koordinat terisi: $coords')));
+      }
+    } on PermissionDeniedException catch (e, st) {
+      debugPrint('PermissionDeniedException _shareLocation: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Izin lokasi ditolak')));
+      }
+    } on PlatformException catch (e, st) {
+      debugPrint('PlatformException _shareLocation: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Gagal mendapatkan lokasi: ${e.message ?? e.toString()}',
+            ),
+          ),
+        );
+      }
+    } catch (e, st) {
+      debugPrint('Error _shareLocation: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal mendapatkan lokasi: $e')));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     const double headerHeight = 160.0;
-    const double topOverlap =
-        48.0; // seberapa banyak header menutupi area atas form
-    final labelStyle = TextStyle(fontSize: 12);
-    final fieldTextStyle = TextStyle(fontSize: 12);
+    const double topOverlap = 48.0;
+    final labelStyle = const TextStyle(fontSize: 12);
+    final fieldTextStyle = const TextStyle(fontSize: 12);
     final smallGap = 10.0;
 
-    // ekstra offset untuk menurunkan seluruh form; ubah nilainya jika perlu
     const double extraTopOffset = 100.0;
 
     return Scaffold(
@@ -145,17 +262,14 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      // warna teks yang tampil saat ada selection (ubah di sini)
                       style: fieldTextStyle.copyWith(
                         color: Colors.blue.shade700,
                       ),
-                      // warna background dropdown menu
                       dropdownColor: Colors.white,
                       items: _problemTypes
                           .map(
                             (type) => DropdownMenuItem(
                               value: type,
-                              // warna teks di daftar pilihan (ubah di sini)
                               child: Text(
                                 type,
                                 style: fieldTextStyle.copyWith(
@@ -215,7 +329,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                     ),
                     SizedBox(height: smallGap),
 
-                    // Koordinat (readOnly) dan ukuran teks lebih kecil
+                    // Koordinat (readOnly) + tombol Share Location
                     TextFormField(
                       controller: _koordinatController,
                       style: fieldTextStyle,
@@ -232,6 +346,37 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
+                        ),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'Isi lokasi saat ini',
+                              icon: const Icon(Icons.my_location, size: 18),
+                              onPressed: _shareLocation,
+                            ),
+                            IconButton(
+                              tooltip: 'Salin koordinat',
+                              icon: const Icon(Icons.copy, size: 18),
+                              onPressed: () {
+                                final text = _koordinatController.text;
+                                if (text.isNotEmpty) {
+                                  Clipboard.setData(ClipboardData(text: text));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Koordinat disalin'),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Koordinat kosong'),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
                         ),
                       ),
                       readOnly: true,
@@ -279,7 +424,17 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             left: 16,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  // Jika ada history, kembali normal
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const Dashboard()),
+                  );
+                }
+              },
             ),
           ),
 
@@ -292,7 +447,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF4894FE),
+                color: const Color(0xFF4894FE),
                 shadows: const [
                   Shadow(
                     offset: Offset(1, 2),
