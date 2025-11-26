@@ -1,9 +1,14 @@
 import 'dart:io';
+import 'dart:convert'; // Untuk Base64
+import 'dart:typed_data'; // Untuk Bytes
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+
 import '../widgets/double_wave_header.dart';
 import '../screens/dashboard_screen.dart';
 
@@ -18,6 +23,8 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   final _formKey = GlobalKey<FormState>();
   File? _image;
   String? _selectedType;
+  bool _isLoading = false; // Variabel Loading
+  Position? _currentPosition;
 
   final List<String> _problemTypes = [
     'Pencemaran Air',
@@ -31,12 +38,21 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   final _deskripsiController = TextEditingController();
   final _koordinatController = TextEditingController();
 
+  @override
+  void dispose() {
+    _judulController.dispose();
+    _deskripsiController.dispose();
+    _koordinatController.dispose();
+    super.dispose();
+  }
+
+  // --- FUNGSI PILIH GAMBAR ---
   Future<void> _pickImage() async {
     try {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 70,
+        imageQuality: 30, // Kualitas rendah agar Base64 tidak terlalu panjang
       );
 
       if (pickedFile != null) {
@@ -44,31 +60,22 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           _image = File(pickedFile.path);
         });
       }
-    } on PlatformException catch (e, st) {
-      debugPrint('PlatformException _pickImage: $e\n$st');
+    } on PlatformException catch (e) {
+      debugPrint('PlatformException _pickImage: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal memilih gambar: ${e.message ?? e.toString()}'),
-          ),
+          SnackBar(content: Text('Gagal akses galeri: ${e.message}')),
         );
       }
-    } catch (e, st) {
-      debugPrint('Error _pickImage: $e\n$st');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Terjadi kesalahan saat memilih gambar'),
-          ),
-        );
-      }
+    } catch (e) {
+      debugPrint('Error _pickImage: $e');
     }
   }
 
-  // share location: ambil koordinat dari device dan isi controller
+  // --- FUNGSI AMBIL LOKASI ---
   Future<void> _shareLocation() async {
     try {
-      // 1. Cek Service GPS Nyala/Tidak
+      // 1. Cek Service GPS
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         if (mounted) {
@@ -81,9 +88,8 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         return;
       }
 
-      // 2. Cek Status Izin
+      // 2. Cek Izin
       LocationPermission permission = await Geolocator.checkPermission();
-
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
@@ -96,21 +102,16 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         }
       }
 
-      // 3. LOGIKA "DENIED FOREVER" (PERBAIKAN UTAMA DISINI)
       if (permission == LocationPermission.deniedForever) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text(
-                'Izin lokasi ditolak permanen. Mohon buka pengaturan untuk mengizinkan.',
+                'Izin lokasi ditolak permanen. Buka settings untuk ubah.',
               ),
-              duration: const Duration(seconds: 4),
               action: SnackBarAction(
-                label: 'BUKA SETTINGS',
-                onPressed: () {
-                  // Membuka halaman pengaturan aplikasi
-                  Geolocator.openAppSettings();
-                },
+                label: 'SETTINGS',
+                onPressed: Geolocator.openAppSettings,
               ),
             ),
           );
@@ -118,7 +119,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         return;
       }
 
-      // 4. Ambil Posisi jika aman
+      // 3. Ambil Posisi
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -127,39 +128,106 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           '${pos.latitude.toStringAsFixed(6)}, ${pos.longitude.toStringAsFixed(6)}';
 
       setState(() {
-        _koordinatController.text = coords;
+        _currentPosition = pos; // Simpan objek Position asli ke variabel
+
+        // Update tampilan teks di layar (hanya untuk visual user)
+        _koordinatController.text =
+            '${pos.latitude.toStringAsFixed(6)}, ${pos.longitude.toStringAsFixed(6)}';
       });
 
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Koordinat terisi: $coords')));
+        ).showSnackBar(SnackBar(content: Text('Lokasi didapat: $coords')));
       }
-    } on PermissionDeniedException catch (e, st) {
-      debugPrint('PermissionDeniedException _shareLocation: $e\n$st');
+    } catch (e) {
+      debugPrint('Error Location: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Izin lokasi ditolak')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal mendapatkan lokasi.')),
+        );
       }
-    } on PlatformException catch (e, st) {
-      debugPrint('PlatformException _shareLocation: $e\n$st');
+    }
+  }
+
+  // --- FUNGSI KIRIM LAPORAN (DATABASE + BASE64) ---
+  Future<void> _submitReport() async {
+    // 1. Validasi Form Teks
+    if (!_formKey.currentState!.validate()) return;
+
+    // 2. Validasi Foto (Wajib Ada)
+    if (_image == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mohon sertakan foto bukti kejadian.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Mulai Loading
+    setState(() => _isLoading = true);
+
+    try {
+      String? imageBase64;
+
+      // 3. Konversi Gambar ke Base64 String
+      if (_image != null) {
+        Uint8List imageBytes = await _image!.readAsBytes();
+        imageBase64 = base64Encode(imageBytes);
+      }
+
+      // 4. Kirim ke Firestore
+      await FirebaseFirestore.instance.collection('laporan').add({
+        'judul': _judulController.text,
+        'deskripsi': _deskripsiController.text,
+        'jenis_masalah': _selectedType,
+        'koordinat': GeoPoint(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+        ),
+        'foto_base64': imageBase64, // Foto disimpan sebagai teks panjang
+        'tanggal_lapor': FieldValue.serverTimestamp(),
+        'status': 'Menunggu Konfirmasi',
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Laporan Berhasil Terkirim!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Reset Form setelah sukses
+        _judulController.clear();
+        _deskripsiController.clear();
+        _koordinatController.clear();
+        setState(() {
+          _image = null;
+          _selectedType = null;
+          _currentPosition = null;
+        });
+
+        // Kembali ke Dashboard
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const Dashboard()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Gagal mendapatkan lokasi: ${e.message ?? e.toString()}',
-            ),
+            content: Text('Gagal mengirim: $e'),
+            backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e, st) {
-      debugPrint('Error _shareLocation: $e\n$st');
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal mendapatkan lokasi: $e')));
-      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -170,20 +238,19 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     final labelStyle = const TextStyle(fontSize: 12);
     final fieldTextStyle = const TextStyle(fontSize: 12);
     final smallGap = 10.0;
-
     const double extraTopOffset = 100.0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F8),
       body: Stack(
         children: [
-          // Header di belakang dengan tinggi terbatas
+          // Header
           const SizedBox(
             height: headerHeight,
             child: DoubleWaveHeader(height: headerHeight),
           ),
 
-          // Konten form ditempatkan lebih rendah agar tidak tertutup header
+          // Konten Form
           SafeArea(
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -197,7 +264,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Judul laporan (lebih kecil)
+                    // Judul
                     TextFormField(
                       controller: _judulController,
                       style: fieldTextStyle,
@@ -214,11 +281,11 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                         ),
                       ),
                       validator: (value) =>
-                          value == null || value.isEmpty ? 'Wajib diisi' : null,
+                          value!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     SizedBox(height: smallGap),
 
-                    // Deskripsi (tinggi dikurangi)
+                    // Deskripsi
                     TextFormField(
                       controller: _deskripsiController,
                       style: fieldTextStyle,
@@ -240,13 +307,13 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                       ),
                       maxLines: 3,
                       validator: (value) =>
-                          value == null || value.isEmpty ? 'Wajib diisi' : null,
+                          value!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     SizedBox(height: smallGap),
 
-                    // Jenis masalah (font lebih kecil)
+                    // Jenis Masalah
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedType,
+                      value: _selectedType,
                       decoration: InputDecoration(
                         labelText: 'Jenis Masalah',
                         labelStyle: labelStyle,
@@ -279,17 +346,14 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                             ),
                           )
                           .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedType = value;
-                        });
-                      },
+                      onChanged: (value) =>
+                          setState(() => _selectedType = value),
                       validator: (value) =>
                           value == null ? 'Pilih jenis masalah' : null,
                     ),
                     SizedBox(height: smallGap),
 
-                    // Upload foto (tinggi sedikit dinaikkan agar nyaman)
+                    // Upload Foto
                     GestureDetector(
                       onTap: _pickImage,
                       child: Container(
@@ -329,7 +393,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                     ),
                     SizedBox(height: smallGap),
 
-                    // Koordinat (readOnly) + tombol Share Location
+                    // Koordinat
                     TextFormField(
                       controller: _koordinatController,
                       style: fieldTextStyle,
@@ -351,27 +415,20 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              tooltip: 'Isi lokasi saat ini',
                               icon: const Icon(Icons.my_location, size: 18),
                               onPressed: _shareLocation,
                             ),
                             IconButton(
-                              tooltip: 'Salin koordinat',
                               icon: const Icon(Icons.copy, size: 18),
                               onPressed: () {
-                                final text = _koordinatController.text;
-                                if (text.isNotEmpty) {
-                                  Clipboard.setData(ClipboardData(text: text));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Koordinat disalin'),
+                                if (_koordinatController.text.isNotEmpty) {
+                                  Clipboard.setData(
+                                    ClipboardData(
+                                      text: _koordinatController.text,
                                     ),
                                   );
-                                } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Koordinat kosong'),
-                                    ),
+                                    const SnackBar(content: Text('Tersalin')),
                                   );
                                 }
                               },
@@ -383,32 +440,34 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Tombol kirim (teks lebih kecil)
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Laporan berhasil dikirim!'),
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                    // Tombol Kirim (YANG INI PENTING)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _submitReport,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          backgroundColor: const Color(0xFFD9EAFD),
                         ),
-                        elevation: 3,
-                        backgroundColor: const Color(0xFFD9EAFD),
-                      ),
-                      child: const Text(
-                        "Kirim Laporan",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF4894FE),
-                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                "Kirim Laporan",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF4894FE),
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -418,7 +477,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             ),
           ),
 
-          // Tombol back (di atas header)
+          // Tombol Back
           Positioned(
             top: 40,
             left: 16,
@@ -426,19 +485,18 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () {
                 if (Navigator.canPop(context)) {
-                  // Jika ada history, kembali normal
                   Navigator.pop(context);
                 } else {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => const Dashboard()),
+                    MaterialPageRoute(builder: (_) => const Dashboard()),
                   );
                 }
               },
             ),
           ),
 
-          // Judul header (di atas header)
+          // Judul Header
           Positioned(
             top: 180,
             left: 24,

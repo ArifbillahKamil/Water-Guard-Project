@@ -79,7 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // Handle Error Firebase
       String message = "Terjadi kesalahan.";
       if (e.code == 'weak-password') {
-        message = "Password terlalu lemah (minimal 6 karakter).";
+        message = "Password terlalu lemah (minimal 8 karakter).";
       } else if (e.code == 'email-already-in-use') {
         message = "Email ini sudah terdaftar.";
       } else if (e.code == 'invalid-email') {
