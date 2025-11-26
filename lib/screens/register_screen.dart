@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Auth
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import '../widgets/double_wave_header.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -12,6 +14,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  // Controller
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
@@ -19,8 +22,85 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
 
+  // State
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
+  bool _isLoading = false; // Untuk loading button
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    phoneController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  // --- FUNGSI REGISTER ---
+  Future<void> _registerUser() async {
+    // 1. Cek Validasi Form
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // 2. Buat Akun di Firebase Authentication
+      final userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: emailController.text.trim(),
+            password: passwordController.text.trim(),
+          );
+
+      // Ambil UID user yang baru dibuat
+      String uid = userCredential.user!.uid;
+
+      // 3. Simpan Biodata Tambahan ke Firestore
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'uid': uid,
+        'username': usernameController.text.trim(),
+        'email': emailController.text.trim(),
+        'phone': phoneController.text.trim(),
+        'role': 'user', // Default role
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        // 4. Sukses
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registrasi Berhasil! Silakan Masuk.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context); // Kembali ke Login Screen
+      }
+    } on FirebaseAuthException catch (e) {
+      // Handle Error Firebase
+      String message = "Terjadi kesalahan.";
+      if (e.code == 'weak-password') {
+        message = "Password terlalu lemah (minimal 6 karakter).";
+      } else if (e.code == 'email-already-in-use') {
+        message = "Email ini sudah terdaftar.";
+      } else if (e.code == 'invalid-email') {
+        message = "Format email salah.";
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +110,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // ===== Double Wave Header =====
-            const DoubleWaveHeader(),
+            const SizedBox(
+              height: 150, // Pastikan ada tinggi agar header muncul
+              child: DoubleWaveHeader(),
+            ),
 
             // ===== Judul "Mendaftar" =====
             const Padding(
@@ -61,39 +144,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Username
-                    TextField(
+                    TextFormField(
                       controller: usernameController,
                       decoration: const InputDecoration(
                         labelText: "Nama pengguna",
                         prefixIcon: Icon(Icons.person_outline),
                       ),
+                      validator: (value) =>
+                          value!.isEmpty ? "Nama wajib diisi" : null,
                     ),
                     const SizedBox(height: 16),
 
                     // Phone
-                    TextField(
+                    TextFormField(
                       controller: phoneController,
                       keyboardType: TextInputType.phone,
                       decoration: const InputDecoration(
                         labelText: "Nomor telepon",
                         prefixIcon: Icon(Icons.phone),
                       ),
+                      validator: (value) =>
+                          value!.isEmpty ? "Nomor telepon wajib diisi" : null,
                     ),
                     const SizedBox(height: 16),
 
                     // Email
-                    TextField(
+                    TextFormField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
                         labelText: "Email",
                         prefixIcon: Icon(Icons.email_outlined),
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty)
+                          return "Email wajib diisi";
+                        if (!value.contains('@')) return "Format email salah";
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
 
                     // Password
-                    TextField(
+                    TextFormField(
                       controller: passwordController,
                       obscureText: obscurePassword,
                       decoration: InputDecoration(
@@ -112,11 +205,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty)
+                          return "Sandi wajib diisi";
+                        if (value.length < 8) return "Sandi minimal 8 karakter";
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
 
                     // Confirm Password
-                    TextField(
+                    TextFormField(
                       controller: confirmPasswordController,
                       obscureText: obscureConfirmPassword,
                       decoration: InputDecoration(
@@ -135,12 +234,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty)
+                          return "Ulangi sandi wajib diisi";
+                        if (value != passwordController.text)
+                          return "Sandi tidak sama";
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 24),
 
                     // ===== Tombol Daftar =====
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: _isLoading ? null : _registerUser,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -149,21 +255,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         elevation: 4,
                         backgroundColor: const Color(0xFFD9EAFD), // biru muda
                       ),
-                      child: const Text(
-                        "Mendaftar",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF4894FE), // biru utama
-                        ),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF4894FE),
+                              ),
+                            )
+                          : const Text(
+                              "Mendaftar",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF4894FE), // biru utama
+                              ),
+                            ),
                     ),
 
                     const SizedBox(height: 16),
                     Center(
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.pop(context);
+                          Navigator.pop(context); // Kembali ke Login
                         },
                         child: const Text.rich(
                           TextSpan(

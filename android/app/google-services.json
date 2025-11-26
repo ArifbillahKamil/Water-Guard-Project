@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "27513644428",
+    "project_id": "waterguard-flutter-project",
+    "storage_bucket": "waterguard-flutter-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:27513644428:android:c16af4bd0d2087ba99e2a9",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDL2ZMThDGeki18gZGb7tlq0Nfg2j62mkA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
