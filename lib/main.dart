@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
       title: 'Pelaporan Perairan',
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      home: const WorkerSignUpScreen(),
+      home: const Dashboard(),
     );
   }
 }
