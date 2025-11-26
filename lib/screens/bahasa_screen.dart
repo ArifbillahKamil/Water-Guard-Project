@@ -1,6 +1,8 @@
 // lib/screens/language_settings_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/profile_screen.dart';
+import 'package:flutter_application_1/screens/profile_settings_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class LanguageSettingsScreen extends StatefulWidget {
@@ -27,7 +29,18 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
           flexibleSpace: Container(),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black54),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProfileSettingsScreen(),
+                  ),
+                );
+              }
+            },
           ),
           title: const Text(
             "Bahasa",
