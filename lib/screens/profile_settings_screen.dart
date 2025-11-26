@@ -17,9 +17,6 @@ class ProfileSettingsScreen extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            // ===== Wave di bawah =====
-            const BottomWaveFooter(),
-
             // ===== Konten utama =====
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +210,7 @@ class _SettingsItem extends StatelessWidget {
 
 // Simple placeholder pages for items that didn't have dedicated screens yet
 class _StorageSettingsPage extends StatelessWidget {
-  const _StorageSettingsPage({super.key});
+  const _StorageSettingsPage();
 
   @override
   Widget build(BuildContext context) {
@@ -227,7 +224,7 @@ class _StorageSettingsPage extends StatelessWidget {
 }
 
 class _LanguageSettingsPage extends StatelessWidget {
-  const _LanguageSettingsPage({super.key});
+  const _LanguageSettingsPage();
 
   @override
   Widget build(BuildContext context) {

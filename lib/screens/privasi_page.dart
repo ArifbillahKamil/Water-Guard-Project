@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class PrivasiPage extends StatefulWidget {
-  const PrivasiPage({Key? key}) : super(key: key);
+  const PrivasiPage({super.key});
 
   @override
   _PrivasiPageState createState() => _PrivasiPageState();
@@ -42,7 +42,11 @@ class _PrivasiPageState extends State<PrivasiPage> {
                   top: 20,
                   left: 16,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -150,7 +154,7 @@ class _PrivasiPageState extends State<PrivasiPage> {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: Colors.white,
+              activeThumbColor: Colors.white,
               activeTrackColor: Colors.greenAccent,
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: Colors.grey[300],
@@ -175,12 +179,20 @@ class WaveClipper extends CustomClipper<Path> {
     var firstControlPoint = Offset(size.width / 4, size.height);
     var firstEndPoint = Offset(size.width / 2, size.height - 30);
     path.quadraticBezierTo(
-        firstControlPoint.dx, firstControlPoint.dy, firstEndPoint.dx, firstEndPoint.dy);
+      firstControlPoint.dx,
+      firstControlPoint.dy,
+      firstEndPoint.dx,
+      firstEndPoint.dy,
+    );
 
     var secondControlPoint = Offset(3 * size.width / 4, size.height - 80);
     var secondEndPoint = Offset(size.width, size.height - 40);
     path.quadraticBezierTo(
-        secondControlPoint.dx, secondControlPoint.dy, secondEndPoint.dx, secondEndPoint.dy);
+      secondControlPoint.dx,
+      secondControlPoint.dy,
+      secondEndPoint.dx,
+      secondEndPoint.dy,
+    );
 
     path.lineTo(size.width, 0);
     path.close();

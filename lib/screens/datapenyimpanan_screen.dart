@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Untuk icon
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DataStorageScreen extends StatefulWidget {
   const DataStorageScreen({super.key});
@@ -12,11 +12,9 @@ class DataStorageScreen extends StatefulWidget {
 }
 
 class _DataStorageScreenState extends State<DataStorageScreen> {
-  // Contoh data dummy untuk penggunaan penyimpanan
-  double _appSize = 120.5; // MB
-  double _cacheSize = 45.2; // MB
-  double _totalUsed = 165.7; // MB
-
+  double _appSize = 120.5;
+  double _cacheSize = 45.2;
+  double _totalUsed = 165.7;
   bool _isClearingCache = false;
 
   Future<void> _clearCache() async {
@@ -24,12 +22,11 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
       _isClearingCache = true;
     });
 
-    // Simulasi proses membersihkan cache
     await Future.delayed(const Duration(seconds: 2));
 
     setState(() {
       _cacheSize = 0.0;
-      _totalUsed = _appSize; // Total yang digunakan hanya ukuran aplikasi
+      _totalUsed = _appSize;
       _isClearingCache = false;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cache berhasil dibersihkan!')),
@@ -40,46 +37,31 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF3F5F8,
-      ), // Background sama dengan dashboard
+      backgroundColor: const Color(0xFFF3F5F8),
+
+      // ===== APPBAR BARU =====
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60.0), // Tinggi AppBar
+        preferredSize: const Size.fromHeight(60.0),
         child: AppBar(
-          automaticallyImplyLeading: false, // Matikan default back button
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF4894FE),
-                  Color(0xFFB3FEB5),
-                ], // Gradient dari dashboard
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(28),
-                bottomRight: Radius.circular(28),
-              ),
-            ),
-          ),
-          title: Text(
-            'Data & Penyimpanan',
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          flexibleSpace: Container(),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
+            icon: const Icon(Icons.arrow_back, color: Colors.black54),
+            onPressed: () => Navigator.pop(context),
           ),
-          elevation: 0, // Hilangkan shadow default AppBar
+          title: const Text(
+            "Data dan penyimpanan",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+            ),
+          ),
         ),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -95,33 +77,33 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Card informasi penyimpanan
             _buildStorageInfoCard(
               context,
               title: 'Ukuran Aplikasi',
               value: '${_appSize.toStringAsFixed(1)} MB',
               icon: Icons.smartphone_outlined,
-              color: const Color(0xFF2E7DF6), // Warna biru dari dashboard
+              color: const Color(0xFF2E7DF6),
             ),
             const SizedBox(height: 12),
+
             _buildStorageInfoCard(
               context,
               title: 'Cache Aplikasi',
               value: '${_cacheSize.toStringAsFixed(1)} MB',
               icon: Icons.cached_outlined,
-              color: const Color(0xFF21B356), // Warna hijau dari dashboard
+              color: const Color(0xFF21B356),
             ),
             const SizedBox(height: 12),
+
             _buildStorageInfoCard(
               context,
               title: 'Total Digunakan',
               value: '${_totalUsed.toStringAsFixed(1)} MB',
               icon: Icons.sd_storage_outlined,
-              color: const Color(0xFFE35247), // Warna merah dari dashboard
+              color: const Color(0xFFE35247),
             ),
             const SizedBox(height: 30),
 
-            // Tombol Bersihkan Cache
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -135,10 +117,7 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Icon(
-                        FontAwesomeIcons.broom,
-                        size: 20,
-                      ), // Icon dari font_awesome_flutter
+                    : const Icon(FontAwesomeIcons.broom, size: 20),
                 label: Text(
                   _isClearingCache
                       ? 'Membersihkan Cache...'
@@ -149,7 +128,7 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4894FE), // Warna biru utama
+                  backgroundColor: const Color(0xFF4894FE),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
@@ -225,7 +204,7 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
             Icons.arrow_forward_ios,
             size: 18,
             color: Color(0xFF9AA3B2),
-          ), // Arrow di paling kanan
+          ),
         ],
       ),
     );

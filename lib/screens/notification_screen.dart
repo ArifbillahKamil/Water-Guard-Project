@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/dashboard_screen.dart';
-import '../widgets/double_wave_header.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class NotificationPage extends StatelessWidget {
   const NotificationPage({super.key});
@@ -9,109 +9,72 @@ class NotificationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
-      body: Column(
+
+      // ===== APPBAR BARU =====
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60.0),
+        child: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          flexibleSpace: Container(),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black54),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: const Text(
+            "Notifikasi",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+      ),
+
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         children: [
-          // header with gradient (kept consistent via DoubleWaveHeader)
-          SizedBox(
-            height:
-                180, // beri tinggi tetap agar Positioned berada di area yang aman
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const DoubleWaveHeader(height: 140),
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const Dashboard(),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // main page title positioned to sit under the wave
-                Positioned(
-                  left: 24,
-                  top: 150, // sesuaikan relatif ke tinggi SizedBox
-                  child: const Text(
-                    'Notifikasi',
-                    style: TextStyle(
-                      color: Color(0xFF3C8CE7),
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      shadows: [
-                        Shadow(
-                          color: Color(0x553C8CE7),
-                          offset: Offset(2, 2),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+          Text(
+            'Penggunaan Penyimpanan',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF111827),
             ),
           ),
-
-          const SizedBox(
-            height: 14,
-          ), // cukup sedikit jarak karena SizedBox di atas sudah memberikan ruang
-
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-              children: const [
-                SizedBox(height: 6),
-                CustomNotificationCard(
-                  title: 'Peringatan akun',
-                  titleColor: Color(0xFFE35247),
-                  subtitleBold: 'verifikasi alamat email anda',
-                  message:
-                      'Segera verifikasi alamat email anda demi keamanan dan kenyamanan anda dalam menggunakan aplikasi ini',
-                  icon: Icons.email_rounded,
-                  iconColor: Color(0xFF8B5CF6),
-                ),
-                SizedBox(height: 14),
-                CustomNotificationCard(
-                  title: 'Laporanmu sedang dikerjakan',
-                  titleColor: Color(0xFF111827),
-                  subtitleBold: '',
-                  message:
-                      'laporanmu mengenai permasalahan banjir karena perairan tersumbat, saat ini sedang ditangani.',
-                  icon: Icons.settings,
-                  iconColor: Color(0xFF2E7DF6),
-                ),
-                SizedBox(height: 14),
-                CustomNotificationCard(
-                  title: 'Terimakasih Relawan',
-                  titleColor: Color(0xFF111827),
-                  subtitleBold: '',
-                  message:
-                      'kamu sudah menyelesaikan laporan warga setempat dengan baik, klaim reward kamu sekarang.',
-                  icon: Icons.card_giftcard,
-                  iconColor: Color(0xFF21B356),
-                ),
-                SizedBox(height: 40),
-              ],
-            ),
+          SizedBox(height: 6),
+          CustomNotificationCard(
+            title: 'Peringatan akun',
+            titleColor: Color(0xFFE35247),
+            subtitleBold: 'verifikasi alamat email anda',
+            message:
+                'Segera verifikasi alamat email anda demi keamanan dan kenyamanan anda dalam menggunakan aplikasi ini',
+            icon: Icons.email_rounded,
+            iconColor: Color(0xFF8B5CF6),
           ),
+          SizedBox(height: 14),
+          CustomNotificationCard(
+            title: 'Laporanmu sedang dikerjakan',
+            titleColor: Color(0xFF111827),
+            subtitleBold: '',
+            message:
+                'laporanmu mengenai permasalahan banjir karena perairan tersumbat, saat ini sedang ditangani.',
+            icon: Icons.settings,
+            iconColor: Color(0xFF2E7DF6),
+          ),
+          SizedBox(height: 14),
+          CustomNotificationCard(
+            title: 'Terimakasih Relawan',
+            titleColor: Color(0xFF111827),
+            subtitleBold: '',
+            message:
+                'kamu sudah menyelesaikan laporan warga setempat dengan baik, klaim reward kamu sekarang.',
+            icon: Icons.card_giftcard,
+            iconColor: Color(0xFF21B356),
+          ),
+          SizedBox(height: 40),
         ],
       ),
     );
@@ -139,7 +102,7 @@ class CustomNotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 140, // dinaikkan supaya konten panjang tidak overflow
+      height: 140,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -153,7 +116,7 @@ class CustomNotificationCard extends StatelessWidget {
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start, // isi diratakan ke atas
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 48,
@@ -167,8 +130,7 @@ class CustomNotificationCard extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment
-                  .start, // jangan center, supaya teks tidak terdorong bawah
+              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -194,7 +156,7 @@ class CustomNotificationCard extends StatelessWidget {
                 Text(
                   message,
                   style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                  maxLines: 3, // batasi jumlah baris agar tidak overflow
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
