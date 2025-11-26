@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/profile_settings_screen.dart';
-import '../widgets/double_wave_header.dart';
-import '../widgets/bottom_wave_footer.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -39,54 +38,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
       hintText: hint,
       filled: true,
       fillColor: Colors.white,
-      // lebih kecil agar total muat
       contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: const BorderSide(color: Color(0xFF4894FE), width: 1.4),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFE5E5E5), width: 1),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: const BorderSide(color: Color(0xFF2E79F8), width: 1.8),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF4894FE), width: 1.6),
       ),
     );
   }
 
-  // terima tinggi agar tiap field tidak melebihi ruang yang tersedia
-  Widget labeledField(
-    String label,
-    TextEditingController controller, {
-    required double height,
-  }) {
+  Widget labeledField(String label, TextEditingController controller) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 13, color: Colors.black87),
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 6),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 3,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: SizedBox(
-              height: height,
-              child: TextFormField(
-                controller: controller,
-                decoration: fieldDecoration(),
-                style: const TextStyle(fontSize: 14),
-              ),
-            ),
+          TextFormField(
+            controller: controller,
+            decoration: fieldDecoration(),
+            style: const TextStyle(fontSize: 14),
           ),
         ],
       ),
@@ -96,151 +77,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
-      body: Stack(
-        children: [
-          const DoubleWaveHeader(),
-          const BottomWaveFooter(),
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final h = constraints.maxHeight;
-                // lebih kecil agar layout pas
-                final avatarRadius = (h * 0.07).clamp(30.0, 46.0);
-                final gap = (h * 0.008).clamp(4.0, 10.0);
+      backgroundColor: const Color(0xFFF3F5F8),
 
-                // perkiraan tinggi area atas (icon + title + avatar + name + email + tombol + gaps)
-                final topEstimate = avatarRadius * 2 + 130.0;
-                // sisa tinggi untuk 4 field
-                final availableForFields = (h - topEstimate).clamp(160.0, h);
-                final fieldHeight = (availableForFields / 4).clamp(42.0, 56.0);
-
-                return Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: h * 0.03,
-                  ),
-                  child: Column(
-                    children: [
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ProfileSettingsScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      SizedBox(height: gap),
-                      // Title
-                      Text(
-                        "My profile",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF4894FE),
-                          shadows: [
-                            Shadow(
-                              color: Colors.black26,
-                              blurRadius: 5,
-                              offset: Offset(1, 3),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: gap),
-                      // Avatar
-                      CircleAvatar(
-                        radius: avatarRadius,
-                        backgroundColor: const Color(0xFFD9EAFD),
-                        backgroundImage: const NetworkImage(
-                          'https://i.pravatar.cc/300?img=65',
-                        ),
-                      ),
-                      SizedBox(height: gap),
-                      Text(
-                        nameController.text,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: gap / 2),
-                      Text(
-                        email,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black54,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                      SizedBox(height: gap),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEEF6FF),
-                          foregroundColor: const Color(0xFF4894FE),
-                          elevation: 3,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 6,
-                            horizontal: 16,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: const Text(
-                          "Edit profile",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: gap * 1.1),
-                      // Fields: gunakan Flexible agar tidak overflow, tapi batasi tiap field dengan fieldHeight
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            labeledField(
-                              "Nama",
-                              nameController,
-                              height: fieldHeight,
-                            ),
-                            labeledField(
-                              "Tanggal lahir",
-                              birthController,
-                              height: fieldHeight,
-                            ),
-                            labeledField(
-                              "Jenis kelamin",
-                              genderController,
-                              height: fieldHeight,
-                            ),
-                            labeledField(
-                              "Telepon",
-                              phoneController,
-                              height: fieldHeight,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+      // ========= APPBAR BARU (selaras LanguageSettingsScreen) =========
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60.0),
+        child: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black87),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProfileSettingsScreen(),
                   ),
                 );
-              },
+              }
+            },
+          ),
+          title: const Text(
+            "My Profile",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
             ),
           ),
-        ],
+        ),
+      ),
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Avatar
+            CircleAvatar(
+              radius: 48,
+              backgroundColor: const Color(0xFFD9EAFD),
+              backgroundImage: const NetworkImage(
+                'https://i.pravatar.cc/300?img=65',
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            Text(
+              nameController.text,
+              style: GoogleFonts.poppins(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              email,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.black54,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Tombol edit profil
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEEF6FF),
+                foregroundColor: const Color(0xFF4894FE),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 22,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: const Text(
+                "Edit profile",
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ),
+
+            const SizedBox(height: 22),
+
+            // ====== INPUT FIELDS ======
+            labeledField("Nama", nameController),
+            labeledField("Tanggal lahir", birthController),
+            labeledField("Jenis kelamin", genderController),
+            labeledField("Telepon", phoneController),
+          ],
+        ),
       ),
     );
   }

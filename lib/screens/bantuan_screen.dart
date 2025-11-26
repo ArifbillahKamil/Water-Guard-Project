@@ -8,11 +8,10 @@ class BantuanScreen extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: const Color(0xFFF3F5F8),
       body: SafeArea(
         child: Stack(
           children: [
-            // Background Gradient Header
             Container(
               height: 160,
               decoration: const BoxDecoration(
@@ -27,13 +26,11 @@ class BantuanScreen extends StatelessWidget {
               ),
             ),
 
-            // Scrollable Content
             SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 136, 16, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// SECTION 1
                   _SectionLabel('Bagian 1: Panduan Penggunaan'),
                   const SizedBox(height: 8),
                   _CardSection(
@@ -72,7 +69,6 @@ class BantuanScreen extends StatelessWidget {
 
                   const SizedBox(height: 18),
 
-                  /// SECTION 2
                   const _SectionLabel('Bagian 2: Masalah Umum (FAQ)'),
                   const SizedBox(height: 8),
                   const _FaqAccordion(
@@ -98,7 +94,6 @@ class BantuanScreen extends StatelessWidget {
 
                   const SizedBox(height: 18),
 
-                  /// SECTION 3
                   const _SectionLabel('Bagian 3: Laporan & Dukungan Teknis'),
                   const SizedBox(height: 8),
                   _CardSection(
@@ -132,7 +127,6 @@ class BantuanScreen extends StatelessWidget {
 
                   const SizedBox(height: 18),
 
-                  /// SECTION 4
                   const _SectionLabel('Bagian 4: Informasi Tambahan'),
                   const SizedBox(height: 8),
                   const _InfoList(
@@ -159,7 +153,6 @@ class BantuanScreen extends StatelessWidget {
               ),
             ),
 
-            // Top Header with Back Button
             Positioned(
               left: 4,
               top: 8,
@@ -191,8 +184,6 @@ class BantuanScreen extends StatelessWidget {
     );
   }
 }
-
-/// ===== UI COMPONENTS =====
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
@@ -333,8 +324,6 @@ class _IconBadge extends StatelessWidget {
   }
 }
 
-/// FAQ ACCORDION
-
 class _FaqAccordion extends StatefulWidget {
   const _FaqAccordion({required this.faqs});
   final List<_FaqItem> faqs;
@@ -416,8 +405,6 @@ class _FaqItem {
   const _FaqItem({required this.question, required this.answer});
 }
 
-/// CONTACT CARD
-
 class _ContactCard extends StatelessWidget {
   const _ContactCard({required this.phoneDisplay, required this.onCall});
 
@@ -484,8 +471,6 @@ class _ContactCard extends StatelessWidget {
     );
   }
 }
-
-/// INFO LIST
 
 class _InfoList extends StatelessWidget {
   const _InfoList({required this.items});

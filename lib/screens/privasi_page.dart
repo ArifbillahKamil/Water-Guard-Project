@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'profile_settings_screen.dart'; // pastikan ada import ini
 
 class PrivasiPage extends StatefulWidget {
   const PrivasiPage({super.key});
@@ -15,106 +16,57 @@ class _PrivasiPageState extends State<PrivasiPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF3F5F8),
+
+      // ===== APPBAR BARU =====
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60.0),
+        child: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          flexibleSpace: Container(),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black54),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProfileSettingsScreen(),
+                  ),
+                );
+              }
+            },
+          ),
+          title: const Text(
+            "Privasi",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+      ),
+
       body: SafeArea(
         child: Column(
           children: [
-            // Header dengan clipPath lengkung
-            Stack(
-              children: [
-                ClipPath(
-                  clipper: WaveClipper(),
-                  child: Container(
-                    height: 160,
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF4A90E2), Color(0xFF9BE7C4)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Tombol back dan status bar (mock)
-                Positioned(
-                  top: 20,
-                  left: 16,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-                Positioned(
-                  top: 22,
-                  left: 60,
-                  child: const Text(
-                    '5:13 PM',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 22,
-                  right: 16,
-                  child: Row(
-                    children: const [
-                      Icon(Icons.alarm, color: Colors.white, size: 18),
-                      SizedBox(width: 6),
-                      Icon(Icons.wifi, color: Colors.white, size: 18),
-                      SizedBox(width: 6),
-                      Icon(Icons.battery_full, color: Colors.white, size: 18),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
             const SizedBox(height: 30),
 
-            // Judul PRIVASI
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 30.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "PRIVASI",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF4A90E2),
-                    letterSpacing: 1,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 4.0,
-                        color: Colors.grey,
-                        offset: Offset(1, 1),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // Toggle list
             buildToggleCard("Akses Lokasi", aksesLokasi, (val) {
               setState(() => aksesLokasi = val);
             }),
             const SizedBox(height: 20),
+
             buildToggleCard("Authentikasi 2 langkah", autentikasi, (val) {
               setState(() => autentikasi = val);
             }),
             const SizedBox(height: 20),
+
             buildToggleCard("Izin akses data perangkat", izinData, (val) {
               setState(() => izinData = val);
             }),
@@ -157,48 +109,11 @@ class _PrivasiPageState extends State<PrivasiPage> {
               activeThumbColor: Colors.white,
               activeTrackColor: Colors.greenAccent,
               inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.grey[300],
+              inactiveTrackColor: Colors.grey,
             ),
           ],
         ),
       ),
     );
   }
-}
-
-// =======================
-// Custom wave clipper
-// =======================
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 40);
-
-    // Lengkungan halus di bawah header
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2, size.height - 30);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
-    );
-
-    var secondControlPoint = Offset(3 * size.width / 4, size.height - 80);
-    var secondEndPoint = Offset(size.width, size.height - 40);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
