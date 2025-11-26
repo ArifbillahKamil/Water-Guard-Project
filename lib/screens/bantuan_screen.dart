@@ -9,11 +9,10 @@ class BantuanScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
-      // Tidak pakai AppBar tinggi/ flexibleSpace lagi
       body: SafeArea(
         child: Stack(
           children: [
-            // ==== HEADER GRADIENT SEBAGAI BAGIAN BODY (LAYOUT STABIL) ====
+            // Background Gradient Header
             Container(
               height: 160,
               decoration: const BoxDecoration(
@@ -22,17 +21,19 @@ class BantuanScreen extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(24),
+                ),
               ),
             ),
 
-            // ==== KONTEN SCROLLABLE; KITA KASIH PADDING TOP SUPAYA TIDAK KE-TIMPA HEADER ====
+            // Scrollable Content
             SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16 + 120, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 136, 16, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Section 1
+                  /// SECTION 1
                   _SectionLabel('Bagian 1: Panduan Penggunaan'),
                   const SizedBox(height: 8),
                   _CardSection(
@@ -70,6 +71,8 @@ class BantuanScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 18),
+
+                  /// SECTION 2
                   const _SectionLabel('Bagian 2: Masalah Umum (FAQ)'),
                   const SizedBox(height: 8),
                   const _FaqAccordion(
@@ -80,7 +83,8 @@ class BantuanScreen extends StatelessWidget {
                             'Pastikan koneksi internet stabil dan sensor telah tersinkron dengan server pusat.',
                       ),
                       _FaqItem(
-                        question: 'Bagaimana cara menambah titik pemantauan baru?',
+                        question:
+                            'Bagaimana cara menambah titik pemantauan baru?',
                         answer:
                             'Masuk ke menu Data Sensor → Tambah Titik Baru → Isi koordinat lokasi.',
                       ),
@@ -93,6 +97,8 @@ class BantuanScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 18),
+
+                  /// SECTION 3
                   const _SectionLabel('Bagian 3: Laporan & Dukungan Teknis'),
                   const SizedBox(height: 8),
                   _CardSection(
@@ -125,6 +131,8 @@ class BantuanScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 18),
+
+                  /// SECTION 4
                   const _SectionLabel('Bagian 4: Informasi Tambahan'),
                   const SizedBox(height: 8),
                   const _InfoList(
@@ -147,21 +155,21 @@ class BantuanScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-
-                  SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
                 ],
               ),
             ),
 
-            // ==== TITLE + BACK DI ATAS GRADIENT ====
+            // Top Header with Back Button
             Positioned(
               left: 4,
               top: 8,
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                    ),
                     onPressed: () => Navigator.maybePop(context),
                   ),
                   const SizedBox(width: 4),
@@ -184,7 +192,7 @@ class BantuanScreen extends StatelessWidget {
   }
 }
 
-/// ====== UI atoms & molecules ======
+/// ===== UI COMPONENTS =====
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
@@ -193,8 +201,10 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Text(text,
-        style: TextStyle(fontWeight: FontWeight.w700, color: cs.primary));
+    return Text(
+      text,
+      style: TextStyle(fontWeight: FontWeight.w700, color: cs.primary),
+    );
   }
 }
 
@@ -211,8 +221,10 @@ class _CardSection extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
+        ),
       ),
     );
   }
@@ -238,6 +250,7 @@ class _GuideTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -258,14 +271,20 @@ class _GuideTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       'Deskripsi: $description',
-                      style:
-                          TextStyle(color: Colors.grey.shade700, height: 1.25),
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        height: 1.25,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Align(
@@ -275,9 +294,12 @@ class _GuideTile extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           visualDensity: VisualDensity.compact,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                         child: Text('Tombol: $buttonText'),
                       ),
@@ -311,6 +333,8 @@ class _IconBadge extends StatelessWidget {
   }
 }
 
+/// FAQ ACCORDION
+
 class _FaqAccordion extends StatefulWidget {
   const _FaqAccordion({required this.faqs});
   final List<_FaqItem> faqs;
@@ -340,10 +364,14 @@ class _FaqAccordionState extends State<_FaqAccordion> {
           children: [
             for (int i = 0; i < widget.faqs.length; i++) ...[
               Theme(
-                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
-                  tilePadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  tilePadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 0,
+                  ),
                   shape: const RoundedRectangleBorder(
                     side: BorderSide(color: Colors.transparent),
                   ),
@@ -357,8 +385,7 @@ class _FaqAccordionState extends State<_FaqAccordion> {
                     '${i + 1}. ${widget.faqs[i].question}',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  childrenPadding:
-                      const EdgeInsets.fromLTRB(16 + 48, 0, 16, 16),
+                  childrenPadding: const EdgeInsets.fromLTRB(64, 0, 16, 16),
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
@@ -389,6 +416,8 @@ class _FaqItem {
   const _FaqItem({required this.question, required this.answer});
 }
 
+/// CONTACT CARD
+
 class _ContactCard extends StatelessWidget {
   const _ContactCard({required this.phoneDisplay, required this.onCall});
 
@@ -398,6 +427,7 @@ class _ContactCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade200),
@@ -411,39 +441,41 @@ class _ContactCard extends StatelessWidget {
           const _IconBadge(icon: Icons.phone_in_talk_rounded),
           const SizedBox(width: 12),
 
-          // Info di kiri (ambil ruang fleksibel)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Kontak Darurat',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                const Text(
+                  'Kontak Darurat',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                ),
                 const SizedBox(height: 2),
-                Text('Nomor: $phoneDisplay',
-                    style: TextStyle(color: Colors.grey.shade700)),
+                Text(
+                  'Nomor: $phoneDisplay',
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
               ],
             ),
           ),
 
           const SizedBox(width: 8),
 
-          // >>> FIX: batasi lebar tombol & hindari Infinity
           ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: 40,
-              maxWidth: 180, // kamu boleh atur 140–200 sesuai kebutuhan
-            ),
+            constraints: const BoxConstraints(minHeight: 40, maxWidth: 180),
             child: ElevatedButton.icon(
               onPressed: onCall,
               icon: const Icon(Icons.call_rounded, size: 18),
               label: const Text('Panggil'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                minimumSize: const Size(0, 40), // tinggi minimal aman
+                minimumSize: const Size(0, 40),
               ),
             ),
           ),
@@ -453,6 +485,7 @@ class _ContactCard extends StatelessWidget {
   }
 }
 
+/// INFO LIST
 
 class _InfoList extends StatelessWidget {
   const _InfoList({required this.items});
@@ -478,11 +511,7 @@ class _InfoList extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.title,
-    this.onTap,
-  });
+  const _InfoRow({required this.icon, required this.title, this.onTap});
 
   final IconData icon;
   final String title;

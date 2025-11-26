@@ -16,46 +16,30 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF3F5F8,
-      ), // Background sama dengan dashboard
+      backgroundColor: const Color(0xFFF3F5F8),
+      // ===== APPBAR BARU =====
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60.0), // Tinggi AppBar
+        preferredSize: const Size.fromHeight(60.0),
         child: AppBar(
-          automaticallyImplyLeading: false, // Matikan default back button
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF4894FE),
-                  Color(0xFFB3FEB5),
-                ], // Gradient dari dashboard
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(28),
-                bottomRight: Radius.circular(28),
-              ),
-            ),
-          ),
-          title: Text(
-            'Pengaturan Bahasa',
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          flexibleSpace: Container(),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
+            icon: const Icon(Icons.arrow_back, color: Colors.black54),
+            onPressed: () => Navigator.pop(context),
           ),
-          elevation: 0, // Hilangkan shadow default AppBar
+          title: const Text(
+            "Bahasa",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+            ),
+          ),
         ),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(

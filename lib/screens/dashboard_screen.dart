@@ -525,7 +525,7 @@ class _ReportRow extends StatelessWidget {
 // =============================
 class DummyPage extends StatelessWidget {
   final String title;
-  const DummyPage({required this.title});
+  const DummyPage({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {

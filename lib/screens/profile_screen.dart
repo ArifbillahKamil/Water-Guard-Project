@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/dashboard_screen.dart';
 import 'package:flutter_application_1/screens/profile_settings_screen.dart';
 import '../widgets/double_wave_header.dart';
 import '../widgets/bottom_wave_footer.dart';

@@ -246,7 +246,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
 
                     // Jenis masalah (font lebih kecil)
                     DropdownButtonFormField<String>(
-                      value: _selectedType,
+                      initialValue: _selectedType,
                       decoration: InputDecoration(
                         labelText: 'Jenis Masalah',
                         labelStyle: labelStyle,
