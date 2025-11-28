@@ -8,6 +8,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:firebase_auth/firebase_auth.dart'; // Import Auth untuk UID
+import 'package:shared_preferences/shared_preferences.dart'; // IMPORT PENTING
 
 import '../widgets/double_wave_header.dart';
 import '../screens/dashboard_screen.dart';
@@ -46,13 +48,31 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     super.dispose();
   }
 
-  // --- FUNGSI PILIH GAMBAR ---
+  // --- FUNGSI PILIH GAMBAR (DENGAN CEK PRIVASI) ---
   Future<void> _pickImage() async {
+    // 1. CEK IZIN PRIVASI DARI HP
+    final prefs = await SharedPreferences.getInstance();
+    // Default true jika belum diset
+    bool izinData = prefs.getBool('privacy_data') ?? true;
+
+    if (!izinData) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Akses Galeri dimatikan di menu Privasi.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return; // Stop di sini, jangan buka galeri
+    }
+
+    // 2. Jika boleh, lanjut buka galeri
     try {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 30, // Kualitas rendah agar Base64 tidak terlalu panjang
+        imageQuality: 30,
       );
 
       if (pickedFile != null) {
@@ -72,10 +92,27 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     }
   }
 
-  // --- FUNGSI AMBIL LOKASI ---
+  // --- FUNGSI AMBIL LOKASI (DENGAN CEK PRIVASI) ---
   Future<void> _shareLocation() async {
+    // 1. CEK IZIN PRIVASI DARI HP
+    final prefs = await SharedPreferences.getInstance();
+    bool izinLokasi = prefs.getBool('privacy_location') ?? true;
+
+    if (!izinLokasi) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Akses Lokasi dimatikan di menu Privasi.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return; // Stop di sini, jangan ambil GPS
+    }
+
+    // 2. Jika boleh, lanjut ambil GPS
     try {
-      // 1. Cek Service GPS
+      // Cek Service GPS
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         if (mounted) {
@@ -88,7 +125,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         return;
       }
 
-      // 2. Cek Izin
+      // Cek Izin Android/iOS
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -119,7 +156,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         return;
       }
 
-      // 3. Ambil Posisi
+      // Ambil Posisi
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -128,11 +165,8 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           '${pos.latitude.toStringAsFixed(6)}, ${pos.longitude.toStringAsFixed(6)}';
 
       setState(() {
-        _currentPosition = pos; // Simpan objek Position asli ke variabel
-
-        // Update tampilan teks di layar (hanya untuk visual user)
-        _koordinatController.text =
-            '${pos.latitude.toStringAsFixed(6)}, ${pos.longitude.toStringAsFixed(6)}';
+        _currentPosition = pos;
+        _koordinatController.text = coords;
       });
 
       if (mounted) {
@@ -150,12 +184,10 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     }
   }
 
-  // --- FUNGSI KIRIM LAPORAN (DATABASE + BASE64) ---
+  // --- FUNGSI KIRIM LAPORAN ---
   Future<void> _submitReport() async {
-    // 1. Validasi Form Teks
     if (!_formKey.currentState!.validate()) return;
 
-    // 2. Validasi Foto (Wajib Ada)
     if (_image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -166,19 +198,34 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
       return;
     }
 
-    // Mulai Loading
+    if (_currentPosition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mohon ambil titik lokasi terlebih dahulu.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sesi habis. Silakan login ulang.')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
       String? imageBase64;
 
-      // 3. Konversi Gambar ke Base64 String
       if (_image != null) {
         Uint8List imageBytes = await _image!.readAsBytes();
         imageBase64 = base64Encode(imageBytes);
       }
 
-      // 4. Kirim ke Firestore
       await FirebaseFirestore.instance.collection('laporan').add({
         'judul': _judulController.text,
         'deskripsi': _deskripsiController.text,
@@ -187,9 +234,11 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           _currentPosition!.latitude,
           _currentPosition!.longitude,
         ),
-        'foto_base64': imageBase64, // Foto disimpan sebagai teks panjang
+        'foto_base64': imageBase64,
         'tanggal_lapor': FieldValue.serverTimestamp(),
         'status': 'Menunggu Konfirmasi',
+        'uid_pelapor': user.uid,
+        'email_pelapor': user.email,
       });
 
       if (mounted) {
@@ -200,7 +249,6 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           ),
         );
 
-        // Reset Form setelah sukses
         _judulController.clear();
         _deskripsiController.clear();
         _koordinatController.clear();
@@ -210,7 +258,6 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           _currentPosition = null;
         });
 
-        // Kembali ke Dashboard
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const Dashboard()),
@@ -440,7 +487,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Tombol Kirim (YANG INI PENTING)
+                    // Tombol Kirim
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(

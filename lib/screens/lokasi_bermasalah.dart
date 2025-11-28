@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart'; // Import package flutter_map
-import 'package:latlong2/latlong.dart'; // Import package latlong2
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:flutter_application_1/models/laporan_model.dart';
-import 'package:flutter_application_1/widgets/detail_laporan_sheet.dart'; // Bottom sheet ini BISA DIPAKAI ULANG!
+import 'package:flutter_application_1/widgets/detail_laporan_sheet.dart';
 
 class PetaLaporanScreen extends StatefulWidget {
   const PetaLaporanScreen({super.key});
@@ -12,112 +13,129 @@ class PetaLaporanScreen extends StatefulWidget {
 }
 
 class _PetaLaporanScreenState extends State<PetaLaporanScreen> {
-  // Posisi awal kamera (masih sama)
+  // Posisi awal kamera (Surabaya/Sidoarjo)
   final LatLng _posisiAwal = LatLng(-7.3386, 112.7508);
 
-  // DATA DUMMY (pastikan koordinatnya sekarang pakai 'LatLng' dari latlong2)
-  final List<LaporanMasalah> _laporanList = [
-    LaporanMasalah(
-      id: 'laporan-01',
-      deskripsi:
-          'Banyak saluran drainase yang tersumbat oleh endapan lumpur dan sampah, sehingga sering menyebabkan genangan saat hujan deras.',
-      koordinat: LatLng(-7.372071280403217, 112.75091130708668),
-      status: StatusLaporan.ditangani,
-    ),
-    LaporanMasalah(
-      id: 'laporan-02',
-      deskripsi:
-          'Pipa PDAM di dekat jembatan bocor, air bersih terbuang ke jalan.',
-      koordinat: LatLng(-7.3395, 112.7512),
-      status: StatusLaporan.verifikasi,
-    ),
-    LaporanMasalah(
-      id: 'laporan-03',
-      deskripsi:
-          'Selokan di depan Garasi Gio Re sudah dibersihkan dan diperbaiki.',
-      koordinat: LatLng(-7.3410, 112.7525),
-      status: StatusLaporan.selesai,
-    ),
-  ];
-
-  // Fungsi untuk menampilkan pop-up detail (INI TETAP SAMA)
-  void _showDetailBottomSheet(LaporanMasalah laporan) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        // Kita bisa pakai ulang widget sheet yang sama persis
-        return DetailLaporanSheet(laporan: laporan);
-      },
-    );
-  }
-
-  // Fungsi untuk mengubah LaporanMasalah menjadi Marker
-  List<Marker> _buildMarkers() {
-    return _laporanList.map((laporan) {
-      return Marker(
-        point: laporan.koordinat,
-        // 'builder' adalah cara flutter_map untuk membuat pin kustom
-        child: GestureDetector(
-          onTap: () {
-            _showDetailBottomSheet(laporan);
-          },
-          child: Icon(
-            Icons.location_pin,
-            color: _getMarkerColor(laporan.status), // Warna berdasarkan status
-            size: 40.0,
-          ),
-        ),
-      );
-    }).toList();
-  }
-
-  // Fungsi helper untuk menentukan warna pin
-  Color _getMarkerColor(StatusLaporan status) {
-    switch (status) {
-      case StatusLaporan.verifikasi:
-        return Colors.red;
-      case StatusLaporan.ditangani:
-        return Colors.blue; // Biru
-      case StatusLaporan.selesai:
-        return Colors.green;
+  // Fungsi Helper: Menentukan Warna Pin berdasarkan String Status dari Database
+  Color _getMarkerColor(String status) {
+    // Kita samakan string-nya dengan yang kita simpan di report_screen.dart
+    if (status == 'Selesai') {
+      return Colors.green;
+    } else if (status == 'Sedang Proses') {
+      return Colors.blue;
+    } else {
+      // Default: 'Menunggu Konfirmasi' atau status lain
+      return Colors.red;
     }
+  }
+
+  // Fungsi Helper: Konversi Status String ke Enum (Agar DetailLaporanSheet tidak error)
+  // Asumsi: LaporanMasalah model kamu pakai Enum. Jika pakai String, fungsi ini tidak perlu.
+  StatusLaporan _parseStatus(String status) {
+    if (status == 'Selesai') return StatusLaporan.selesai;
+    if (status == 'Sedang Proses') return StatusLaporan.ditangani;
+    return StatusLaporan.verifikasi; // Default
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Peta Laporan (WaterGuard)'),
-
-        // ** INI TOMBOL KEMBALI YANG DITAMBAHKAN **
+        title: const Text('Peta Laporan'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            // Ini akan kembali ke screen sebelumnya (Dashboard)
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: FlutterMap(
-        options: MapOptions(
-          initialCenter: _posisiAwal, // Posisi awal
-          initialZoom: 15.0, // Zoom awal
-        ),
-        children: [
-          // 1. Layer untuk gambar peta (Tiles)
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName:
-                "com.example.flutter_application_1", // Pastikan ini benar
-          ),
 
-          // 2. Layer untuk Pin/Marker
-          MarkerLayer(
-            markers: _buildMarkers(), // Panggil fungsi yang kita buat
-          ),
-        ],
+      // MENGGUNAKAN STREAM BUILDER AGAR REAL-TIME
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('laporan').snapshots(),
+        builder: (context, snapshot) {
+          // 1. Cek Loading
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // 2. Cek Error
+          if (snapshot.hasError) {
+            return const Center(child: Text("Gagal memuat peta."));
+          }
+
+          // 3. Ambil Data Dokumen
+          final docs = snapshot.data?.docs ?? [];
+
+          // 4. Buat List Marker dari Data Firestore
+          List<Marker> myMarkers = [];
+
+          for (var doc in docs) {
+            final data = doc.data() as Map<String, dynamic>;
+
+            // Cek apakah data punya koordinat valid (GeoPoint)
+            if (data['koordinat'] is GeoPoint) {
+              GeoPoint gp = data['koordinat'];
+              LatLng point = LatLng(gp.latitude, gp.longitude);
+              String statusString = data['status'] ?? 'Menunggu Konfirmasi';
+
+              // Buat Objek Laporan (untuk dipass ke DetailSheet)
+              // Sesuaikan field ini dengan LaporanMasalah model kamu
+              LaporanMasalah laporanObj = LaporanMasalah(
+                id: doc.id,
+                deskripsi: data['deskripsi'] ?? '-',
+                koordinat: point,
+                status: _parseStatus(statusString),
+                // Tambahkan field lain jika modelmu butuh (misal judul, fotoUrl, dll)
+              );
+
+              // Buat Marker
+              myMarkers.add(
+                Marker(
+                  point: point,
+                  width: 40,
+                  height: 40,
+                  child: GestureDetector(
+                    onTap: () {
+                      // Tampilkan Detail saat Pin diklik
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) =>
+                            DetailLaporanSheet(laporan: laporanObj),
+                      );
+                    },
+                    child: Icon(
+                      Icons.location_pin,
+                      color: _getMarkerColor(statusString),
+                      size: 40.0,
+                      shadows: const [
+                        Shadow(blurRadius: 10, color: Colors.black26),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+          }
+
+          // 5. Tampilkan Peta
+          return FlutterMap(
+            options: MapOptions(
+              initialCenter:
+                  _posisiAwal, // Bisa diubah agar center ke marker pertama
+              initialZoom: 13.0,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: "com.example.flutter_application_1",
+              ),
+
+              // Masukkan marker yang sudah kita generate dari database
+              MarkerLayer(markers: myMarkers),
+            ],
+          );
+        },
       ),
     );
   }

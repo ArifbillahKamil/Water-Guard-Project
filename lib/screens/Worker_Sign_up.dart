@@ -1,8 +1,13 @@
 import 'dart:io';
+import 'dart:convert'; // Untuk mengubah file jadi Base64
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart'; // GANTI image_picker JADI file_picker
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_application_1/screens/dashboard_screen.dart'; // Pastikan path benar
+import 'package:firebase_auth/firebase_auth.dart'; // Import Auth
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:shared_preferences/shared_preferences.dart'; // 1. WAJIB IMPORT INI
+
+import 'package:flutter_application_1/screens/dashboard_screen.dart';
 import '../widgets/double_wave_header.dart';
 
 class WorkerSignUpScreen extends StatefulWidget {
@@ -21,9 +26,9 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
 
-  // Variabel untuk menyimpan File CV
   File? _cvFile;
   String? cvFileName;
+  bool _isLoading = false; // Status Loading
 
   @override
   void dispose() {
@@ -35,38 +40,147 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
     super.dispose();
   }
 
-  // --- FUNGSI PILIH FILE PDF ---
+  // --- FUNGSI PILIH FILE (DENGAN CEK PRIVASI) ---
   Future<void> _pickCVFile() async {
+    // 1. CEK SAKLAR PRIVASI DULU
+    final prefs = await SharedPreferences.getInstance();
+    // Ambil status 'privacy_data' (sesuai yang diset di PrivasiPage)
+    bool isDataAllowed = prefs.getBool('privacy_data') ?? true;
+
+    // 2. JIKA DIMATIKAN, STOP PROSES
+    if (!isDataAllowed) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Izin akses data dimatikan di menu Privasi.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return; // Berhenti di sini, File Picker tidak akan terbuka
+    }
+
+    // 3. JIKA DIIZINKAN, LANJUT BUKA FILE PICKER
     try {
-      // Membuka File Explorer bawaan HP
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx'], // Hanya boleh PDF atau Word
+        allowedExtensions: ['pdf', 'doc', 'docx'],
       );
 
       if (result != null && result.files.single.path != null) {
+        // Cek ukuran file (Maksimal 1 MB agar aman di Firestore)
+        File file = File(result.files.single.path!);
+        int sizeInBytes = await file.length();
+        double sizeInMb = sizeInBytes / (1024 * 1024);
+
+        if (sizeInMb > 1.0) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Ukuran file terlalu besar (Maks 1MB)'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+
         setState(() {
-          _cvFile = File(result.files.single.path!);
-          cvFileName = result.files.single.name; // Ambil nama file
+          _cvFile = file;
+          cvFileName = result.files.single.name;
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('File CV berhasil dipilih')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('CV berhasil dipilih')));
         }
-      } else {
-        // User membatalkan pemilihan file
       }
     } on PlatformException catch (e) {
       debugPrint("Error Permission: $e");
+    } catch (e) {
+      debugPrint("Error Pick File: $e");
+    }
+  }
+
+  // --- FUNGSI DAFTAR RELAWAN (SUBMIT) ---
+  Future<void> _submitVolunteer() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_cvFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Wajib upload CV (PDF/Word)'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan login terlebih dahulu.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      List<int> fileBytes = await _cvFile!.readAsBytes();
+      String base64File = base64Encode(fileBytes);
+
+      await FirebaseFirestore.instance.collection('pendaftaran_relawan').add({
+        'uid': user.uid,
+        'email_akun': user.email,
+        'nama_lengkap': nameController.text,
+        'tgl_lahir': dobController.text,
+        'pendidikan': educationController.text,
+        'no_hp': phoneController.text,
+        'email_kontak': emailController.text,
+        'nama_file_cv': cvFileName,
+        'file_cv_base64': base64File,
+        'tgl_daftar': FieldValue.serverTimestamp(),
+        'status': 'Menunggu Review',
+      });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal akses penyimpanan: ${e.message}')),
+          const SnackBar(
+            content: Text('Pendaftaran Berhasil Dikirim!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        nameController.clear();
+        dobController.clear();
+        educationController.clear();
+        phoneController.clear();
+        emailController.clear();
+        setState(() {
+          _cvFile = null;
+          cvFileName = null;
+        });
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const Dashboard()),
+          (route) => false,
         );
       }
     } catch (e) {
-      debugPrint("Error Pick File: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mendaftar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -79,14 +193,12 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
       backgroundColor: const Color(0xFFF7F8FA),
       body: Stack(
         children: [
-          // 1. Header Wave
           const SizedBox(
             height: headerHeight,
             width: double.infinity,
             child: DoubleWaveHeader(),
           ),
 
-          // 2. Main Content
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
@@ -98,7 +210,6 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Judul
                   Padding(
                     padding: const EdgeInsets.only(top: 50, bottom: 12),
                     child: Text(
@@ -118,12 +229,10 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                     ),
                   ),
 
-                  // Form
                   Form(
                     key: _formKey,
                     child: Column(
                       children: [
-                        // Nama
                         TextFormField(
                           controller: nameController,
                           decoration: InputDecoration(
@@ -139,13 +248,11 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          validator: (value) => value == null || value.isEmpty
-                              ? "Wajib diisi"
-                              : null,
+                          validator: (val) =>
+                              val!.isEmpty ? "Wajib diisi" : null,
                         ),
                         const SizedBox(height: 12),
 
-                        // Tanggal lahir
                         TextFormField(
                           controller: dobController,
                           readOnly: true,
@@ -157,16 +264,16 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                             suffixIcon: IconButton(
                               icon: const Icon(Icons.date_range),
                               onPressed: () async {
-                                final pickedDate = await showDatePicker(
+                                final picked = await showDatePicker(
                                   context: context,
                                   initialDate: DateTime(2000),
                                   firstDate: DateTime(1900),
                                   lastDate: DateTime.now(),
                                 );
-                                if (pickedDate != null) {
+                                if (picked != null) {
                                   setState(() {
                                     dobController.text =
-                                        "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
+                                        "${picked.day}/${picked.month}/${picked.year}";
                                   });
                                 }
                               },
@@ -181,13 +288,11 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          validator: (value) => value == null || value.isEmpty
-                              ? "Wajib diisi"
-                              : null,
+                          validator: (val) =>
+                              val!.isEmpty ? "Wajib diisi" : null,
                         ),
                         const SizedBox(height: 12),
 
-                        // Pendidikan
                         TextFormField(
                           controller: educationController,
                           decoration: InputDecoration(
@@ -203,13 +308,11 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          validator: (value) => value == null || value.isEmpty
-                              ? "Wajib diisi"
-                              : null,
+                          validator: (val) =>
+                              val!.isEmpty ? "Wajib diisi" : null,
                         ),
                         const SizedBox(height: 12),
 
-                        // Nomor Telepon
                         TextFormField(
                           controller: phoneController,
                           keyboardType: TextInputType.phone,
@@ -226,13 +329,11 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          validator: (value) => value == null || value.isEmpty
-                              ? "Wajib diisi"
-                              : null,
+                          validator: (val) =>
+                              val!.isEmpty ? "Wajib diisi" : null,
                         ),
                         const SizedBox(height: 12),
 
-                        // Email
                         TextFormField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
@@ -249,25 +350,18 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Wajib diisi";
-                            }
-                            if (!value.contains('@')) {
-                              return "Email tidak valid";
-                            }
-                            return null;
-                          },
+                          validator: (val) => (!val!.contains('@'))
+                              ? "Email tidak valid"
+                              : null,
                         ),
                         const SizedBox(height: 18),
 
-                        // --- Upload CV (PDF/DOC) ---
+                        // --- TOMBOL UPLOAD (DENGAN CEK PRIVASI) ---
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             ElevatedButton.icon(
                               onPressed:
-                                  _pickCVFile, // Panggil fungsi file picker
+                                  _pickCVFile, // Panggil fungsi yang sudah dimodifikasi
                               icon: const Icon(
                                 Icons.upload_file,
                                 color: Color(0xFF4894FE),
@@ -293,7 +387,7 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    cvFileName ?? "Belum ada file dipilih",
+                                    cvFileName ?? "Format: PDF/Doc (Max 1MB)",
                                     style: TextStyle(
                                       color: _cvFile != null
                                           ? Colors.black87
@@ -301,10 +395,10 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                                       fontWeight: _cvFile != null
                                           ? FontWeight.bold
                                           : FontWeight.normal,
-                                      fontSize: 13,
+                                      fontSize: 12,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   if (_cvFile != null)
                                     const Text(
@@ -321,40 +415,15 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                               const Icon(
                                 Icons.check_circle,
                                 color: Colors.green,
-                                size: 24,
                               ),
                           ],
                         ),
                         const SizedBox(height: 22),
 
-                        // Tombol Mendaftar
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                // Validasi File CV
-                                if (_cvFile == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Wajib upload CV (PDF/Word)',
-                                      ),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                // TODO: Aksi daftar
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Pendaftaran berhasil!'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              }
-                            },
+                            onPressed: _isLoading ? null : _submitVolunteer,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFD9EAFD),
                               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -363,14 +432,22 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                               ),
                               elevation: 4,
                             ),
-                            child: const Text(
-                              "Mendaftar",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF4894FE),
-                              ),
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Mendaftar",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF4894FE),
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 40),
@@ -382,24 +459,21 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
             ),
           ),
 
-          // 3. Smart Back Button
           Positioned(
-            top: 28,
-            left: 8,
-            child: SafeArea(
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  } else {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const Dashboard()),
-                    );
-                  }
-                },
-              ),
+            top: 40,
+            left: 16,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const Dashboard()),
+                  );
+                }
+              },
             ),
           ),
         ],

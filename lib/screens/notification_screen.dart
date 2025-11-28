@@ -48,7 +48,7 @@ class NotificationPage extends StatelessWidget {
           CustomNotificationCard(
             title: 'Peringatan akun',
             titleColor: Color(0xFFE35247),
-            subtitleBold: 'verifikasi alamat email anda',
+            subtitleBold: 'Verifikasi alamat email anda',
             message:
                 'Segera verifikasi alamat email anda demi keamanan dan kenyamanan anda dalam menggunakan aplikasi ini',
             icon: Icons.email_rounded,

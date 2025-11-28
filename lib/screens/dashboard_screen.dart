@@ -1,19 +1,114 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart'; // Import Geolocator
+import 'package:firebase_auth/firebase_auth.dart'; // Import Auth
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:google_fonts/google_fonts.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // 1. WAJIB IMPORT INI
+
 import 'package:flutter_application_1/screens/Worker_Sign_up.dart';
 import 'package:flutter_application_1/screens/lokasi_bermasalah.dart';
 import 'package:flutter_application_1/screens/notification_screen.dart';
-import 'package:flutter_application_1/screens/profile_screen.dart';
 import 'package:flutter_application_1/screens/profile_settings_screen.dart';
 import 'package:flutter_application_1/screens/report_screen.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter/services.dart';
 
 // =============================
-// DASHBOARD SCREEN
+// DASHBOARD SCREEN (STATEFUL)
 // =============================
-class Dashboard extends StatelessWidget {
+class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
+
+  @override
+  State<Dashboard> createState() => _DashboardState();
+}
+
+class _DashboardState extends State<Dashboard> {
+  String _locationMessage = "Mencari lokasi...";
+  String _userName = "User";
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserName();
+    _getCurrentLocation(); // Cek lokasi saat awal buka
+  }
+
+  // --- AMBIL NAMA USER ---
+  Future<void> _getUserName() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists) {
+          setState(() {
+            _userName = userDoc['username'] ?? "User";
+          });
+        }
+      } catch (e) {
+        debugPrint("Gagal mengambil nama user: $e");
+      }
+    }
+  }
+
+  // --- 2. FUNGSI AMBIL LOKASI (DENGAN CEK PRIVASI) ---
+  Future<void> _getCurrentLocation() async {
+    // A. CEK SAKLAR PRIVASI DULU
+    final prefs = await SharedPreferences.getInstance();
+    // Default true jika belum pernah diset
+    bool isLocationAllowed = prefs.getBool('privacy_location') ?? true;
+
+    if (!isLocationAllowed) {
+      if (mounted) {
+        setState(() {
+          _locationMessage = "Lokasi Disembunyikan"; // Ubah teks jika dimatikan
+        });
+      }
+      return; // Stop, jangan akses GPS
+    }
+
+    // B. Jika diizinkan, lanjut akses GPS seperti biasa
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) setState(() => _locationMessage = "GPS Mati");
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) setState(() => _locationMessage = "Izin Ditolak");
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) setState(() => _locationMessage = "Izin Permanen Ditolak");
+      return;
+    }
+
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      if (mounted) {
+        setState(() {
+          _locationMessage =
+              "${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}";
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _locationMessage = "Gagal memuat");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,62 +121,84 @@ class Dashboard extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // === HEADER ===
-              const _DashboardHeader(),
+              // HEADER
+              _DashboardHeader(userName: _userName),
 
               const SizedBox(height: 40),
 
-              // === KOORDINAT ===
+              // KOORDINAT
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: padding),
-                child: const _CoordinateRow(
-                  coordinate: '-7.372103200850368, 112.75061827576478',
-                ),
+                child: _CoordinateRow(coordinate: _locationMessage),
               ),
 
               const SizedBox(height: 20),
 
-              // === MENU UTAMA ===
+              // MENU UTAMA
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: padding),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Menu 1: Lapor (Selalu Buka)
                     _RoundMenu(
                       icon: FontAwesomeIcons.fileCircleExclamation,
                       label: 'Laporkan',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ReportFormScreen(),
-                          ),
-                        );
-                      },
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ReportFormScreen(),
+                        ),
+                      ),
                     ),
+
+                    // Menu 2: Daftar Relawan (Selalu Buka)
                     _RoundMenu(
                       icon: FontAwesomeIcons.userPlus,
                       label: 'Mendaftar\nSukarelawan',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const WorkerSignUpScreen(),
-                          ),
-                        );
-                      },
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const WorkerSignUpScreen(),
+                        ),
+                      ),
                     ),
+
+                    // Menu 3: Peta (DIBATASI OLEH PRIVASI)
                     _RoundMenu(
                       icon: FontAwesomeIcons.mapLocationDot,
                       label: 'Lokasi\nBermasalah',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PetaLaporanScreen(),
-                          ),
-                        );
+                      onTap: () async {
+                        // 3. CEK SAKLAR PRIVASI SEBELUM BUKA PETA
+                        final prefs = await SharedPreferences.getInstance();
+                        bool isLocationAllowed =
+                            prefs.getBool('privacy_location') ?? true;
+
+                        if (!isLocationAllowed) {
+                          // Jika dimatikan, munculkan peringatan
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Akses Peta dimatikan di menu Privasi.',
+                                ),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
+                          return; // JANGAN PINDAH HALAMAN
+                        }
+
+                        // Jika hidup, baru pindah
+                        if (context.mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PetaLaporanScreen(),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ],
@@ -90,7 +207,7 @@ class Dashboard extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // === LAPORAN DAERAH ===
+              // LAPORAN DAERAH
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: padding),
                 child: const _ReportList(),
@@ -106,17 +223,17 @@ class Dashboard extends StatelessWidget {
 }
 
 // =============================
-// HEADER
+// HEADER WIDGET
 // =============================
 class _DashboardHeader extends StatelessWidget {
-  const _DashboardHeader();
+  final String userName;
+  const _DashboardHeader({required this.userName});
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // Background Gradient
         Container(
           width: double.infinity,
           height: 280,
@@ -139,8 +256,6 @@ class _DashboardHeader extends StatelessWidget {
             ],
           ),
         ),
-
-        // Icon notifikasi & avatar
         Positioned(
           top: 38,
           right: 18,
@@ -174,8 +289,6 @@ class _DashboardHeader extends StatelessWidget {
             ],
           ),
         ),
-
-        // Greeting dan teks utama
         Positioned(
           left: 28,
           top: 50,
@@ -189,7 +302,7 @@ class _DashboardHeader extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Jonathan!',
+                '$userName!',
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 14,
@@ -209,8 +322,6 @@ class _DashboardHeader extends StatelessWidget {
             ],
           ),
         ),
-
-        // Hero image kanan
         Positioned(
           right: 12,
           bottom: 8,
@@ -222,8 +333,6 @@ class _DashboardHeader extends StatelessWidget {
                 const Icon(Icons.person, size: 80, color: Colors.white24),
           ),
         ),
-
-        // Kotak pencarian
         Positioned(
           left: 20,
           right: 20,
@@ -271,7 +380,7 @@ class _DashboardHeader extends StatelessWidget {
 }
 
 // =============================
-// KOORDINAT ROW
+// COORDINATE WIDGET
 // =============================
 class _CoordinateRow extends StatelessWidget {
   final String coordinate;
@@ -308,7 +417,7 @@ class _CoordinateRow extends StatelessWidget {
 }
 
 // =============================
-// MENU BULAT
+// MENU BUTTON WIDGET
 // =============================
 class _RoundMenu extends StatelessWidget {
   final IconData icon;
@@ -363,7 +472,7 @@ class _RoundMenu extends StatelessWidget {
 }
 
 // =============================
-// DAFTAR LAPORAN
+// LIST LAPORAN REAL-TIME (FIRESTORE)
 // =============================
 class _ReportList extends StatelessWidget {
   const _ReportList();
@@ -388,35 +497,85 @@ class _ReportList extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Laporan di daerahmu saat ini',
+            'Laporan Terbaru',
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 12),
-          _ReportRow(
-            color: const Color(0xFFBEE3FF),
-            statusColor: const Color(0xFF2E7DF6),
-            coord: '-7.372071280403217, 112.75091130708668',
-            statusLabel: 'Sedang ditangani',
-            distance: '1.2 KM',
-          ),
-          const SizedBox(height: 8),
-          _ReportRow(
-            color: const Color(0xFFDFF7E6),
-            statusColor: const Color(0xFF21B356),
-            coord: '-7.373071655332484, 112.74897132208254',
-            statusLabel: 'Sudah ditangani',
-            distance: '1.0 KM',
-          ),
-          const SizedBox(height: 8),
-          _ReportRow(
-            color: const Color(0xFFFEECEB),
-            statusColor: const Color(0xFFE35247),
-            coord: '-7.373748788247933, 112.74889545775858',
-            statusLabel: 'Belum terlaksana',
-            distance: '2.1 KM',
+
+          // --- STREAM BUILDER ---
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('laporan')
+                .orderBy('tanggal_lapor', descending: true)
+                .limit(3)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+              if (snapshot.hasError) {
+                return const Text("Gagal memuat data");
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text("Belum ada laporan."),
+                );
+              }
+
+              final docs = snapshot.data!.docs;
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: docs.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final data = docs[index].data() as Map<String, dynamic>;
+
+                  // Parse Koordinat
+                  String coordStr = '-';
+                  if (data['koordinat'] is GeoPoint) {
+                    GeoPoint gp = data['koordinat'];
+                    coordStr =
+                        "${gp.latitude.toStringAsFixed(4)}, ${gp.longitude.toStringAsFixed(4)}";
+                  } else if (data['koordinat'] != null) {
+                    coordStr = data['koordinat'].toString();
+                  }
+
+                  // Parse Status & Warna
+                  String status = data['status'] ?? 'Menunggu';
+                  Color statusColor = const Color(0xFFE35247); // Merah
+                  Color bgColor = const Color(0xFFFEECEB);
+
+                  if (status == 'Selesai') {
+                    statusColor = const Color(0xFF21B356); // Hijau
+                    bgColor = const Color(0xFFDFF7E6);
+                  } else if (status == 'Sedang Proses') {
+                    statusColor = const Color(0xFF2E7DF6); // Biru
+                    bgColor = const Color(0xFFBEE3FF);
+                  }
+
+                  String jenis = data['jenis_masalah'] ?? 'Laporan';
+
+                  return _ReportRow(
+                    color: bgColor,
+                    statusColor: statusColor,
+                    coord: coordStr,
+                    statusLabel: status,
+                    distance: jenis,
+                  );
+                },
+              );
+            },
           ),
         ],
       ),
@@ -425,7 +584,7 @@ class _ReportList extends StatelessWidget {
 }
 
 // =============================
-// SATU ROW LAPORAN
+// ROW ITEM LAPORAN
 // =============================
 class _ReportRow extends StatelessWidget {
   final Color color;
@@ -486,7 +645,7 @@ class _ReportRow extends StatelessWidget {
                   Row(
                     children: [
                       const Icon(
-                        Icons.location_on_outlined,
+                        Icons.info_outline,
                         size: 12,
                         color: Color(0xFF6B7280),
                       ),
@@ -505,38 +664,7 @@ class _ReportRow extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 6),
-        GestureDetector(
-          onTap: () {
-            Clipboard.setData(ClipboardData(text: coord));
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Koordinat disalin')));
-          },
-          child: const Icon(Icons.copy, size: 18, color: Color(0xFF94A3B8)),
-        ),
       ],
-    );
-  }
-}
-
-// =============================
-// DUMMY PAGE (sementara)
-// =============================
-class DummyPage extends StatelessWidget {
-  final String title;
-  const DummyPage({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Text(
-          '$title sedang dikembangkan...',
-          style: GoogleFonts.poppins(fontSize: 16),
-        ),
-      ),
     );
   }
 }

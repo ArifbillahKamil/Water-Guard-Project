@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import ini
+import 'profile_settings_screen.dart';
 
 class PrivasiPage extends StatefulWidget {
   const PrivasiPage({super.key});
@@ -8,119 +10,109 @@ class PrivasiPage extends StatefulWidget {
 }
 
 class _PrivasiPageState extends State<PrivasiPage> {
+  // Default value
   bool aksesLokasi = true;
-  bool autentikasi = true;
+  bool autentikasi = false;
   bool izinData = true;
+  bool _isLoading = true; // Loading saat baca data awal
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings(); // Baca settingan lama saat halaman dibuka
+  }
+
+  // --- FUNGSI BACA SETTINGAN DARI HP ---
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      aksesLokasi = prefs.getBool('privacy_location') ?? true;
+      autentikasi = prefs.getBool('privacy_2fa') ?? false;
+      izinData = prefs.getBool('privacy_data') ?? true;
+      _isLoading = false;
+    });
+  }
+
+  // --- FUNGSI SIMPAN SETTINGAN KE HP ---
+  Future<void> _updateSetting(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header dengan clipPath lengkung
-            Stack(
-              children: [
-                ClipPath(
-                  clipper: WaveClipper(),
-                  child: Container(
-                    height: 160,
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF4A90E2), Color(0xFF9BE7C4)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                  ),
-                ),
+      backgroundColor: const Color(0xFFF3F5F8),
 
-                // Tombol back dan status bar (mock)
-                Positioned(
-                  top: 20,
-                  left: 16,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
+      // ===== APPBAR =====
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black54),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ProfileSettingsScreen(),
                 ),
-                Positioned(
-                  top: 22,
-                  left: 60,
-                  child: const Text(
-                    '5:13 PM',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 22,
-                  right: 16,
-                  child: Row(
-                    children: const [
-                      Icon(Icons.alarm, color: Colors.white, size: 18),
-                      SizedBox(width: 6),
-                      Icon(Icons.wifi, color: Colors.white, size: 18),
-                      SizedBox(width: 6),
-                      Icon(Icons.battery_full, color: Colors.white, size: 18),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-
-            // Judul PRIVASI
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 30.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "PRIVASI",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF4A90E2),
-                    letterSpacing: 1,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 4.0,
-                        color: Colors.grey,
-                        offset: Offset(1, 1),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // Toggle list
-            buildToggleCard("Akses Lokasi", aksesLokasi, (val) {
-              setState(() => aksesLokasi = val);
-            }),
-            const SizedBox(height: 20),
-            buildToggleCard("Authentikasi 2 langkah", autentikasi, (val) {
-              setState(() => autentikasi = val);
-            }),
-            const SizedBox(height: 20),
-            buildToggleCard("Izin akses data perangkat", izinData, (val) {
-              setState(() => izinData = val);
-            }),
-          ],
+              );
+            }
+          },
+        ),
+        title: const Text(
+          "Privasi",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: Colors.black87,
+          ),
         ),
       ),
+
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
+              child: Column(
+                children: [
+                  const SizedBox(height: 30),
+
+                  // Toggle Lokasi
+                  buildToggleCard("Akses Lokasi", aksesLokasi, (val) {
+                    setState(() => aksesLokasi = val);
+                    _updateSetting('privacy_location', val);
+                    // Opsional: Jika dimatikan, bisa show dialog peringatan
+                    if (!val) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Fitur peta mungkin tidak berjalan optimal.',
+                          ),
+                        ),
+                      );
+                    }
+                  }),
+                  const SizedBox(height: 20),
+
+                  // Toggle 2FA
+                  buildToggleCard("Authentikasi 2 langkah", autentikasi, (val) {
+                    setState(() => autentikasi = val);
+                    _updateSetting('privacy_2fa', val);
+                  }),
+                  const SizedBox(height: 20),
+
+                  // Toggle Data
+                  buildToggleCard("Izin akses data perangkat", izinData, (val) {
+                    setState(() => izinData = val);
+                    _updateSetting('privacy_data', val);
+                  }),
+                ],
+              ),
+            ),
     );
   }
 
@@ -134,9 +126,9 @@ class _PrivasiPageState extends State<PrivasiPage> {
           borderRadius: BorderRadius.circular(30),
           boxShadow: const [
             BoxShadow(
-              color: Colors.black26,
-              blurRadius: 6,
-              offset: Offset(2, 4),
+              color: Colors.black12, // Dibuat lebih soft (12 bukan 26)
+              blurRadius: 10,
+              offset: Offset(0, 4),
             ),
           ],
         ),
@@ -154,51 +146,15 @@ class _PrivasiPageState extends State<PrivasiPage> {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeThumbColor: Colors.white,
-              activeTrackColor: Colors.greenAccent,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.grey[300],
+              // Warna aktif disesuaikan dengan tema biru aplikasi (opsional)
+              activeColor: const Color(0xFF4894FE),
+              activeTrackColor: const Color(0xFFBEE3FF),
+              inactiveThumbColor: Colors.grey.shade200,
+              inactiveTrackColor: Colors.grey.shade400,
             ),
           ],
         ),
       ),
     );
   }
-}
-
-// =======================
-// Custom wave clipper
-// =======================
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 40);
-
-    // Lengkungan halus di bawah header
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2, size.height - 30);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
-    );
-
-    var secondControlPoint = Offset(3 * size.width / 4, size.height - 80);
-    var secondEndPoint = Offset(size.width, size.height - 40);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
