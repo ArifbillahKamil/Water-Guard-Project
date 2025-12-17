@@ -1,9 +1,6 @@
-// lib/screens/language_settings_screen.dart
-
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/profile_screen.dart';
-import 'package:flutter_application_1/screens/profile_settings_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:easy_localization/easy_localization.dart'; // 1. Import Wajib
 
 class LanguageSettingsScreen extends StatefulWidget {
   const LanguageSettingsScreen({super.key});
@@ -13,38 +10,26 @@ class LanguageSettingsScreen extends StatefulWidget {
 }
 
 class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
-  String? _selectedLanguage = 'Indonesia'; // Bahasa default
-
   @override
   Widget build(BuildContext context) {
+    // Ambil kode bahasa yang sedang aktif (misal 'id' atau 'en')
+    String currentLocaleCode = context.locale.languageCode;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F8),
-      // ===== APPBAR BARU =====
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(60.0),
         child: AppBar(
           automaticallyImplyLeading: false,
           backgroundColor: Colors.transparent,
           elevation: 0,
-          flexibleSpace: Container(),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black54),
-            onPressed: () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              } else {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ProfileSettingsScreen(),
-                  ),
-                );
-              }
-            },
+            onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            "Bahasa",
-            style: TextStyle(
+          title: Text(
+            "title_language".tr(), // 2. Gunakan .tr() untuk menerjemahkan
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
               color: Colors.black87,
@@ -52,14 +37,13 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
           ),
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Pilih Bahasa Aplikasi',
+              "choose_language".tr(), // Gunakan key dari JSON
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -67,20 +51,25 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildLanguageOption(context, 'Indonesia', 'ID'),
-            _buildDivider(),
-            _buildLanguageOption(context, 'English (US)', 'EN'),
-            _buildDivider(),
+
+            // Opsi Indonesia
             _buildLanguageOption(
               context,
-              '日本語 (Japanese)', // Contoh bahasa lain
-              'JP',
+              'Indonesia',
+              'ID',
+              const Locale('id'),
+              currentLocaleCode == 'id', // Cek apakah ini bahasa aktif
             ),
+
             _buildDivider(),
+
+            // Opsi Inggris
             _buildLanguageOption(
               context,
-              '中文 (Chinese)', // Contoh bahasa lain
-              'CN',
+              'English (US)',
+              'EN',
+              const Locale('en'),
+              currentLocaleCode == 'en',
             ),
           ],
         ),
@@ -90,25 +79,30 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
 
   Widget _buildLanguageOption(
     BuildContext context,
-    String language,
-    String code,
+    String languageName,
+    String codeDisplay,
+    Locale localeTarget,
+    bool isActive,
   ) {
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedLanguage = language;
-          // Di sini Anda bisa menambahkan logika untuk menyimpan pilihan bahasa
-          // misal pakai SharedPreferences atau Provider/Bloc
+      onTap: () async {
+        // 3. FUNGSI AJAIB PENGUBAH BAHASA
+        await context.setLocale(localeTarget);
+
+        if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Bahasa diubah ke $language')));
-        });
+          ).showSnackBar(SnackBar(content: Text("msg_changed".tr())));
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isActive
+              ? Colors.blue.withOpacity(0.05)
+              : Colors.white, // Highlight jika aktif
           borderRadius: BorderRadius.circular(12),
+          border: isActive ? Border.all(color: const Color(0xFF4894FE)) : null,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
@@ -117,22 +111,21 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
             ),
           ],
         ),
-        margin: const EdgeInsets.only(bottom: 8), // Margin antar opsi
+        margin: const EdgeInsets.only(bottom: 8),
         child: Row(
           children: [
-            // Icon bendera atau representasi bahasa
             Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFFE0F7FA), // Warna background icon
+                color: const Color(0xFFE0F7FA),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
                 child: Text(
-                  code, // Kode negara atau inisial bahasa
+                  codeDisplay,
                   style: GoogleFonts.poppins(
-                    color: const Color(0xFF00796B), // Warna teks icon
+                    color: const Color(0xFF00796B),
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -142,7 +135,7 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
             const SizedBox(width: 16),
             Expanded(
               child: Text(
-                language,
+                languageName,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   color: const Color(0xFF111827),
@@ -150,20 +143,14 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
                 ),
               ),
             ),
-            Radio<String>(
-              value: language,
-              groupValue: _selectedLanguage,
-              onChanged: (String? value) {
-                setState(() {
-                  _selectedLanguage = value;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Bahasa diubah ke $value')),
-                  );
-                });
+            // Radio button otomatis mengikuti status isActive
+            Radio<bool>(
+              value: true,
+              groupValue: isActive, // Jika isActive true, radio nyala
+              onChanged: (val) {
+                context.setLocale(localeTarget);
               },
-              activeColor: const Color(
-                0xFF4894FE,
-              ), // Warna radio button saat aktif
+              activeColor: const Color(0xFF4894FE),
             ),
           ],
         ),
@@ -172,6 +159,6 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
   }
 
   Widget _buildDivider() {
-    return const SizedBox(height: 10); // Spasi antar opsi
+    return const SizedBox(height: 10);
   }
 }

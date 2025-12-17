@@ -5,7 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart'; // Import Auth
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // 1. WAJIB IMPORT INI
+import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
+import 'package:easy_localization/easy_localization.dart'; // 1. WAJIB IMPORT INI
 
 import 'package:flutter_application_1/screens/Worker_Sign_up.dart';
 import 'package:flutter_application_1/screens/lokasi_bermasalah.dart';
@@ -121,7 +122,7 @@ class _DashboardState extends State<Dashboard> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // HEADER
+              // HEADER (User Name dilempar ke widget Header)
               _DashboardHeader(userName: _userName),
 
               const SizedBox(height: 40),
@@ -144,7 +145,7 @@ class _DashboardState extends State<Dashboard> {
                     // Menu 1: Lapor (Selalu Buka)
                     _RoundMenu(
                       icon: FontAwesomeIcons.fileCircleExclamation,
-                      label: 'Laporkan',
+                      label: 'menu_report'.tr(), // <--- UPDATE BAHASA
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -156,7 +157,7 @@ class _DashboardState extends State<Dashboard> {
                     // Menu 2: Daftar Relawan (Selalu Buka)
                     _RoundMenu(
                       icon: FontAwesomeIcons.userPlus,
-                      label: 'Mendaftar\nSukarelawan',
+                      label: 'menu_volunteer'.tr(), // <--- UPDATE BAHASA
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -168,7 +169,7 @@ class _DashboardState extends State<Dashboard> {
                     // Menu 3: Peta (DIBATASI OLEH PRIVASI)
                     _RoundMenu(
                       icon: FontAwesomeIcons.mapLocationDot,
-                      label: 'Lokasi\nBermasalah',
+                      label: 'menu_map'.tr(), // <--- UPDATE BAHASA
                       onTap: () async {
                         // 3. CEK SAKLAR PRIVASI SEBELUM BUKA PETA
                         final prefs = await SharedPreferences.getInstance();
@@ -297,7 +298,7 @@ class _DashboardHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Hi,',
+                'dash_hi'.tr(), // <--- UPDATE BAHASA ("Hai")
                 style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
               ),
               const SizedBox(height: 2),
@@ -311,7 +312,8 @@ class _DashboardHeader extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Laporkan\nmasalah perairanmu',
+                'dash_subtitle'
+                    .tr(), // <--- UPDATE BAHASA ("Laporkan masalah...")
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 26,
@@ -362,7 +364,7 @@ class _DashboardHeader extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       decoration: InputDecoration.collapsed(
-                        hintText: 'Search',
+                        hintText: 'search_hint'.tr(), // <--- UPDATE BAHASA
                         hintStyle: GoogleFonts.poppins(
                           color: const Color(0xFF9AA3B2),
                         ),
@@ -497,7 +499,7 @@ class _ReportList extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Laporan Terbaru',
+            'recent_reports'.tr(), // <--- UPDATE BAHASA
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,

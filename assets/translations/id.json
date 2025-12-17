@@ -1,0 +1,30 @@
+{
+  "title_language": "Bahasa",
+  "choose_language": "Pilih Bahasa Aplikasi",
+  "msg_changed": "Bahasa berhasil diubah",
+
+  "dash_hi": "Hai",
+  "dash_subtitle": "Laporkan\nmasalah perairanmu",
+  "menu_report": "Laporkan",
+  "menu_volunteer": "Mendaftar\nSukarelawan",
+  "menu_map": "Lokasi\nBermasalah",
+  "recent_reports": "Laporan Terbaru",
+  "search_hint": "Cari...",
+
+  "help_title": "Pusat Bantuan",
+  "help_header": "Halo, ada yang bisa\nkami bantu?",
+  "help_search_hint": "Cari topik kendala...",
+  "cat_account": "Akun",
+  "cat_report": "Laporan",
+  "cat_volunteer": "Relawan",
+  "cat_system": "Sistem",
+  "help_topic_prefix": "Topik:",
+  "help_all_questions": "Semua Pertanyaan",
+  "help_reset": "Lihat Semua",
+  "help_not_found": "Tidak ditemukan hasil.",
+  "help_contact_title": "Masih butuh bantuan?",
+  "help_contact_desc": "Hubungi tim support kami langsung",
+  "btn_chat": "Chat",
+  "btn_email": "Email",
+  "btn_call": "Telepon"
+}

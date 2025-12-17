@@ -104,10 +104,9 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
     }
   }
 
-  // --- FUNGSI DAFTAR RELAWAN (SUBMIT) ---
+  // --- FUNGSI DAFTAR RELAWAN (UPDATE: DENGAN NOTIFIKASI OTOMATIS) ---
   Future<void> _submitVolunteer() async {
     if (!_formKey.currentState!.validate()) return;
-
     if (_cvFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -129,9 +128,11 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Convert File
       List<int> fileBytes = await _cvFile!.readAsBytes();
       String base64File = base64Encode(fileBytes);
 
+      // A. SIMPAN DATA RELAWAN (SEPERTI BIASA)
       await FirebaseFirestore.instance.collection('pendaftaran_relawan').add({
         'uid': user.uid,
         'email_akun': user.email,
@@ -146,6 +147,18 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
         'status': 'Menunggu Review',
       });
 
+      // B. (BARU) BUAT NOTIFIKASI OTOMATIS
+      await FirebaseFirestore.instance.collection('notifikasi').add({
+        'uid_user': user.uid,
+        'judul': 'Pendaftaran Sukarelawan',
+        'sub_judul': 'Berkas Diterima',
+        'pesan':
+            'Halo ${nameController.text}, berkas pendaftaranmu sebagai sukarelawan sudah kami terima. Harap menunggu proses seleksi selanjutnya.',
+        'tipe': 'info', // Warna Biru
+        'tanggal': FieldValue.serverTimestamp(),
+        'is_read': false,
+      });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -154,6 +167,7 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
           ),
         );
 
+        // Reset Form
         nameController.clear();
         dobController.clear();
         educationController.clear();

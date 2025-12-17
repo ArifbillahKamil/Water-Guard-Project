@@ -1,0 +1,30 @@
+{
+  "title_language": "Language",
+  "choose_language": "Choose App Language",
+  "msg_changed": "Language changed successfully",
+
+  "dash_hi": "Hi",
+  "dash_subtitle": "Report your\nwater issues",
+  "menu_report": "Report",
+  "menu_volunteer": "Volunteer\nSign Up",
+  "menu_map": "Problem\nLocations",
+  "recent_reports": "Recent Reports",
+  "search_hint": "Search...",
+
+  "help_title": "Help Center",
+  "help_header": "Hello, how can we\nhelp you?",
+  "help_search_hint": "Search for topics...",
+  "cat_account": "Account",
+  "cat_report": "Report",
+  "cat_volunteer": "Volunteer",
+  "cat_system": "System",
+  "help_topic_prefix": "Topic:",
+  "help_all_questions": "All Questions",
+  "help_reset": "View All",
+  "help_not_found": "No results found.",
+  "help_contact_title": "Still need help?",
+  "help_contact_desc": "Contact our support team directly",
+  "btn_chat": "Chat",
+  "btn_email": "Email",
+  "btn_call": "Call"
+}

@@ -1,8 +1,8 @@
-// lib/screens/data_storage_screen.dart
-
+import 'dart:io'; // Untuk akses File System
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:path_provider/path_provider.dart'; // Wajib ada untuk akses path
 
 class DataStorageScreen extends StatefulWidget {
   const DataStorageScreen({super.key});
@@ -12,41 +12,110 @@ class DataStorageScreen extends StatefulWidget {
 }
 
 class _DataStorageScreenState extends State<DataStorageScreen> {
-  double _appSize = 120.5;
-  double _cacheSize = 45.2;
-  double _totalUsed = 165.7;
-  bool _isClearingCache = false;
+  // Variabel Data Real
+  String _cacheSizeStr = "0.0 MB";
+  double _cacheSizeBytes = 0;
+  bool _isLoading = false;
 
+  // Data Statis (Karena App Size asli sulit didapat tanpa akses Root/Native Code)
+  final String _appSizeStr = "45.0 MB";
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCacheSize(); // Hitung cache saat layar dibuka
+  }
+
+  // --- LOGIKA BACKEND MENGHITUNG CACHE ---
+  Future<void> _checkCacheSize() async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      double totalSize = 0;
+
+      if (tempDir.existsSync()) {
+        tempDir.listSync(recursive: true, followLinks: false).forEach((
+          FileSystemEntity entity,
+        ) {
+          if (entity is File) {
+            totalSize += entity.lengthSync();
+          }
+        });
+      }
+
+      setState(() {
+        _cacheSizeBytes = totalSize;
+        _cacheSizeStr = _formatBytes(totalSize);
+      });
+    } catch (e) {
+      debugPrint("Gagal menghitung cache: $e");
+    }
+  }
+
+  // --- LOGIKA BACKEND MENGHAPUS CACHE ---
   Future<void> _clearCache() async {
-    setState(() {
-      _isClearingCache = true;
-    });
+    setState(() => _isLoading = true);
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final tempDir = await getTemporaryDirectory();
 
-    setState(() {
-      _cacheSize = 0.0;
-      _totalUsed = _appSize;
-      _isClearingCache = false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cache berhasil dibersihkan!')),
-      );
-    });
+      if (tempDir.existsSync()) {
+        // Hapus setiap file di dalam folder temp
+        final dir = Directory(tempDir.path);
+        dir.listSync().forEach((FileSystemEntity entity) {
+          try {
+            entity.deleteSync(recursive: true);
+          } catch (e) {
+            // Abaikan file yang sedang dikunci sistem
+          }
+        });
+      }
+
+      // Simulasi delay sedikit agar user merasa ada proses
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('File sampah berhasil di bersihkan!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Hitung ulang (Harusnya jadi 0)
+        await _checkCacheSize();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // --- HELPER: Mengubah Bytes ke MB/GB ---
+  String _formatBytes(double bytes) {
+    if (bytes <= 0) return "0.0 MB";
+    const suffixes = ["B", "KB", "MB", "GB"];
+    var i = 0;
+    while (bytes >= 1024 && i < suffixes.length - 1) {
+      bytes /= 1024;
+      i++;
+    }
+    return '${bytes.toStringAsFixed(1)} ${suffixes[i]}';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F8),
-
-      // ===== APPBAR BARU =====
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(60.0),
         child: AppBar(
           automaticallyImplyLeading: false,
           backgroundColor: Colors.transparent,
           elevation: 0,
-          flexibleSpace: Container(),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black54),
             onPressed: () => Navigator.pop(context),
@@ -61,7 +130,6 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
           ),
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -77,28 +145,33 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Card 1: Ukuran Aplikasi (Statis)
             _buildStorageInfoCard(
               context,
               title: 'Ukuran Aplikasi',
-              value: '${_appSize.toStringAsFixed(1)} MB',
+              value: _appSizeStr, // Statis
               icon: Icons.smartphone_outlined,
               color: const Color(0xFF2E7DF6),
             ),
             const SizedBox(height: 12),
 
+            // Card 2: Cache (Dinamis / Real)
             _buildStorageInfoCard(
               context,
-              title: 'Cache Aplikasi',
-              value: '${_cacheSize.toStringAsFixed(1)} MB',
+              title: 'Cache & File Sampah',
+              value: _cacheSizeStr, // Berubah sesuai data asli
               icon: Icons.cached_outlined,
               color: const Color(0xFF21B356),
             ),
             const SizedBox(height: 12),
 
+            // Card 3: Total (Dinamis)
             _buildStorageInfoCard(
               context,
-              title: 'Total Digunakan',
-              value: '${_totalUsed.toStringAsFixed(1)} MB',
+              title: 'Total Data',
+              value: _isLoading
+                  ? "Menghitung..."
+                  : _cacheSizeStr, // Sementara kita samakan dgn cache karena data user sulit diakses
               icon: Icons.sd_storage_outlined,
               color: const Color(0xFFE35247),
             ),
@@ -107,8 +180,11 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _isClearingCache ? null : _clearCache,
-                icon: _isClearingCache
+                // Jika cache sudah 0 atau sedang loading, tombol mati
+                onPressed: (_isLoading || _cacheSizeBytes == 0)
+                    ? null
+                    : _clearCache,
+                icon: _isLoading
                     ? const SizedBox(
                         width: 20,
                         height: 20,
@@ -119,9 +195,7 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
                       )
                     : const Icon(FontAwesomeIcons.broom, size: 20),
                 label: Text(
-                  _isClearingCache
-                      ? 'Membersihkan Cache...'
-                      : 'Bersihkan Cache',
+                  _isLoading ? 'Membersihkan...' : 'Bersihkan Cache',
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -130,15 +204,28 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4894FE),
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey.shade300,
+                  disabledForegroundColor: Colors.grey,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 8,
-                  shadowColor: const Color(0xFF4894FE).withOpacity(0.3),
                 ),
               ),
             ),
+
+            // Info tambahan
+            if (_cacheSizeBytes == 0 && !_isLoading)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Center(
+                  child: Text(
+                    "Penyimpanan bersih optimal!",
+                    style: TextStyle(color: Colors.green[600], fontSize: 12),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -200,11 +287,7 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
               ],
             ),
           ),
-          const Icon(
-            Icons.arrow_forward_ios,
-            size: 18,
-            color: Color(0xFF9AA3B2),
-          ),
+          // Hapus panah jika hanya info statis, atau biarkan jika ingin detail
         ],
       ),
     );

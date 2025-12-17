@@ -184,10 +184,10 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     }
   }
 
-  // --- FUNGSI KIRIM LAPORAN ---
+  // --- FUNGSI KIRIM LAPORAN (UPDATE: DENGAN NOTIFIKASI OTOMATIS) ---
   Future<void> _submitReport() async {
+    // 1. Validasi Form
     if (!_formKey.currentState!.validate()) return;
-
     if (_image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -197,7 +197,6 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
       );
       return;
     }
-
     if (_currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -220,25 +219,41 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
 
     try {
       String? imageBase64;
-
       if (_image != null) {
         Uint8List imageBytes = await _image!.readAsBytes();
         imageBase64 = base64Encode(imageBytes);
       }
 
-      await FirebaseFirestore.instance.collection('laporan').add({
-        'judul': _judulController.text,
-        'deskripsi': _deskripsiController.text,
-        'jenis_masalah': _selectedType,
-        'koordinat': GeoPoint(
-          _currentPosition!.latitude,
-          _currentPosition!.longitude,
-        ),
-        'foto_base64': imageBase64,
-        'tanggal_lapor': FieldValue.serverTimestamp(),
-        'status': 'Menunggu Konfirmasi',
-        'uid_pelapor': user.uid,
-        'email_pelapor': user.email,
+      // A. SIMPAN DATA LAPORAN (SEPERTI BIASA)
+      DocumentReference docRef = await FirebaseFirestore.instance
+          .collection('laporan')
+          .add({
+            'judul': _judulController.text,
+            'deskripsi': _deskripsiController.text,
+            'jenis_masalah': _selectedType,
+            'koordinat': GeoPoint(
+              _currentPosition!.latitude,
+              _currentPosition!.longitude,
+            ),
+            'foto_base64': imageBase64,
+            'tanggal_lapor': FieldValue.serverTimestamp(),
+            'status': 'Menunggu Konfirmasi',
+            'uid_pelapor': user.uid,
+            'email_pelapor': user.email,
+          });
+
+      // B. (BARU) BUAT NOTIFIKASI OTOMATIS
+      // Ini akan membuat notifikasi muncul di halaman Notifikasi user
+      await FirebaseFirestore.instance.collection('notifikasi').add({
+        'uid_user': user.uid, // Agar hanya muncul di HP pelapor
+        'judul': 'Laporan Terkirim', // Judul Notif
+        'sub_judul': _judulController.text, // Subjudul ambil dari inputan user
+        'pesan':
+            'Laporanmu mengenai "$_selectedType" berhasil kami terima dan sedang dalam antrean verifikasi.',
+        'tipe': 'success', // Warna Hijau
+        'tanggal': FieldValue.serverTimestamp(),
+        'is_read': false,
+        'link_id': docRef.id, // Opsional: ID laporan asli
       });
 
       if (mounted) {
@@ -249,6 +264,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           ),
         );
 
+        // Reset Form
         _judulController.clear();
         _deskripsiController.clear();
         _koordinatController.clear();
@@ -258,6 +274,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           _currentPosition = null;
         });
 
+        // Kembali ke Dashboard
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const Dashboard()),
