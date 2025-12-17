@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
-import 'package:firebase_auth/firebase_auth.dart'; // Import Auth
-import 'package:intl/intl.dart'; // Untuk format tanggal
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart'; // 1. WAJIB IMPORT INI
 
 class NotificationPage extends StatelessWidget {
   const NotificationPage({super.key});
@@ -23,42 +24,40 @@ class NotificationPage extends StatelessWidget {
             icon: const Icon(Icons.arrow_back, color: Colors.black54),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            "Notifikasi",
-            style: TextStyle(
+          title: Text(
+            "notif_title".tr(), // "Notifikasi"
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
               color: Colors.black87,
             ),
           ),
-          // Tombol Debug (Opsional: Bisa dihapus jika tidak butuh)
           actions: [
             IconButton(
               icon: const Icon(Icons.add_circle_outline, color: Colors.grey),
               onPressed: () => _createDummyNotification(user?.uid),
-              tooltip: "Buat Notifikasi Test",
+              tooltip: "Test Notif",
             ),
           ],
         ),
       ),
       body: user == null
-          ? const Center(child: Text("Silakan login terlebih dahulu"))
+          ? Center(child: Text("notif_login_req".tr())) // "Silakan login..."
           : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('notifikasi')
-                  .where('uid_user', isEqualTo: user.uid) // Filter user
-                  .orderBy('tanggal', descending: true) // Urutan terbaru
+                  .where('uid_user', isEqualTo: user.uid)
+                  .orderBy('tanggal', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // Error Handling agar tidak merah di layar
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
-                      "Error: ${snapshot.error}",
+                      "${'notif_error'.tr()}${snapshot.error}", // "Terjadi kesalahan: ..."
                       style: const TextStyle(color: Colors.red),
                     ),
                   );
@@ -76,7 +75,7 @@ class NotificationPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          "Belum ada notifikasi",
+                          "notif_empty".tr(), // "Belum ada notifikasi"
                           style: GoogleFonts.poppins(color: Colors.grey),
                         ),
                       ],
@@ -103,25 +102,30 @@ class NotificationPage extends StatelessWidget {
                     IconData iconData = Icons.info;
 
                     if (type == 'alert') {
-                      themeColor = const Color(0xFFE35247); // Merah
+                      themeColor = const Color(0xFFE35247);
                       iconData = Icons.warning_amber_rounded;
                     } else if (type == 'success') {
-                      themeColor = const Color(0xFF21B356); // Hijau
+                      themeColor = const Color(0xFF21B356);
                       iconData = Icons.check_circle_outline;
                     } else if (type == 'promo') {
-                      themeColor = const Color(0xFF8B5CF6); // Ungu
+                      themeColor = const Color(0xFF8B5CF6);
                       iconData = Icons.local_offer_outlined;
                     }
 
-                    // Format Tanggal
+                    // Format Tanggal (Mengikuti Bahasa HP)
                     String timeAgo = '';
                     if (data['tanggal'] != null) {
                       Timestamp ts = data['tanggal'];
-                      timeAgo = DateFormat('dd MMM, HH:mm').format(ts.toDate());
+                      // context.locale.toString() akan otomatis ambil 'id' atau 'en'
+                      timeAgo = DateFormat(
+                        'dd MMM, HH:mm',
+                        context.locale.toString(),
+                      ).format(ts.toDate());
                     }
 
                     return CustomNotificationCard(
-                      title: data['judul'] ?? 'Notifikasi',
+                      title:
+                          data['judul'] ?? 'Info', // Data DB tidak di-translate
                       titleColor: themeColor,
                       subtitleBold: data['sub_judul'] ?? '',
                       message: data['pesan'] ?? '',
@@ -136,15 +140,14 @@ class NotificationPage extends StatelessWidget {
     );
   }
 
-  // Fungsi Debug: Buat Data Dummy
+  // Fungsi Debug
   Future<void> _createDummyNotification(String? uid) async {
     if (uid == null) return;
     await FirebaseFirestore.instance.collection('notifikasi').add({
       'uid_user': uid,
       'judul': 'Status Laporan',
-      'sub_judul': 'Test Notifikasi Manual',
-      'pesan':
-          'Ini adalah notifikasi percobaan. Tombol Tutup sekarang sudah berfungsi!',
+      'sub_judul': 'Test Notifikasi',
+      'pesan': 'Ini notifikasi test. Format tanggal akan menyesuaikan bahasa.',
       'tipe': 'success',
       'tanggal': FieldValue.serverTimestamp(),
       'is_read': false,
@@ -153,7 +156,7 @@ class NotificationPage extends StatelessWidget {
 }
 
 // ==========================================
-// CARD YANG BISA DI-EXPAND (STATEFUL)
+// CARD WIDGET
 // ==========================================
 class CustomNotificationCard extends StatefulWidget {
   final String title;
@@ -180,7 +183,7 @@ class CustomNotificationCard extends StatefulWidget {
 }
 
 class _CustomNotificationCardState extends State<CustomNotificationCard> {
-  bool _isExpanded = false; // Status card (Terbuka/Tertutup)
+  bool _isExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -261,7 +264,7 @@ class _CustomNotificationCardState extends State<CustomNotificationCard> {
                     Text(
                       widget.message,
                       style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                      maxLines: _isExpanded ? null : 2, // Logic Expand
+                      maxLines: _isExpanded ? null : 2,
                       overflow: _isExpanded
                           ? TextOverflow.visible
                           : TextOverflow.ellipsis,
@@ -271,7 +274,7 @@ class _CustomNotificationCardState extends State<CustomNotificationCard> {
               ),
               const SizedBox(width: 12),
 
-              // --- TOMBOL PANAH (EXPAND/COLLAPSE) ---
+              // --- TOMBOL PANAH ---
               GestureDetector(
                 onTap: () {
                   setState(() {
@@ -308,20 +311,22 @@ class _CustomNotificationCardState extends State<CustomNotificationCard> {
             ],
           ),
 
-          // --- TOMBOL TUTUP (YANG KITA PERBAIKI) ---
+          // --- TOMBOL TUTUP ---
           if (_isExpanded) ...[
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  // PERBAIKAN DI SINI:
                   setState(() {
-                    _isExpanded = false; // Tutup kembali
+                    _isExpanded = false;
                   });
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
-                child: const Text("Tutup", style: TextStyle(fontSize: 12)),
+                child: Text(
+                  "notif_close".tr(), // "Tutup"
+                  style: const TextStyle(fontSize: 12),
+                ),
               ),
             ),
           ],

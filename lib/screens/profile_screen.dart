@@ -1,12 +1,13 @@
 import 'dart:io';
-import 'dart:convert'; // Untuk Base64
-import 'dart:typed_data'; // Untuk decoding gambar
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart'; // Import Image Picker
+import 'package:image_picker/image_picker.dart';
+import 'package:easy_localization/easy_localization.dart'; // 1. IMPORT INI
 
 import 'package:flutter_application_1/screens/profile_settings_screen.dart';
 
@@ -25,14 +26,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _email = "Loading...";
   String? _selectedGender;
 
-  // --- VARIABEL FOTO ---
-  File? _newImageFile; // Foto baru yang dipilih dari galeri
-  String? _currentImageBase64; // Foto lama dari database (String Base64)
+  File? _newImageFile;
+  String? _currentImageBase64;
 
   bool _isEditing = false;
   bool _isLoading = false;
 
-  final List<String> _genderOptions = ['Laki-laki', 'Perempuan'];
+  // LOGIKA GENDER: Simpan dalam key bahasa agar mudah di-map
+  final List<String> _genderKeys = ['prof_gender_male', 'prof_gender_female'];
 
   @override
   void initState() {
@@ -40,10 +41,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserData();
   }
 
-  // --- 1. AMBIL DATA & FOTO DARI FIREBASE ---
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
-
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
@@ -54,18 +53,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         if (userDoc.exists) {
           Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
-
           setState(() {
             _email = user.email ?? "-";
             nameController.text = data['username'] ?? "";
             phoneController.text = data['phone'] ?? "";
             birthController.text = data['tgl_lahir'] ?? "";
 
-            if (_genderOptions.contains(data['gender'])) {
-              _selectedGender = data['gender'];
-            }
-
-            // Ambil string foto jika ada
+            // Kita simpan value asli (ID/EN) ke state
+            _selectedGender = data['gender'];
             _currentImageBase64 = data['profile_image_base64'];
           });
         }
@@ -76,56 +71,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isLoading = false);
   }
 
-  // --- 2. FUNGSI GANTI FOTO ---
   Future<void> _pickImage() async {
-    if (!_isEditing) return; // Hanya bisa ganti foto pas mode edit
-
+    if (!_isEditing) return;
     try {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 20, // KOMPRESI KUAT SUPAYA RINGAN DI DATABASE
+        imageQuality: 20,
       );
-
       if (pickedFile != null) {
-        setState(() {
-          _newImageFile = File(pickedFile.path);
-        });
+        setState(() => _newImageFile = File(pickedFile.path));
       }
     } catch (e) {
       debugPrint("Gagal ambil foto: $e");
     }
   }
 
-  // --- 3. SIMPAN DATA & FOTO ---
   Future<void> _saveProfile() async {
     setState(() => _isLoading = true);
-
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
-        // Siapkan data dasar
         Map<String, dynamic> dataToUpdate = {
           'username': nameController.text,
           'phone': phoneController.text,
           'tgl_lahir': birthController.text,
-          'gender': _selectedGender,
-          'email': user.email,
+          'gender': _selectedGender, // Menyimpan teks yang sedang dipilih
           'updated_at': FieldValue.serverTimestamp(),
         };
 
-        // Jika user memilih foto baru, konversi ke Base64 dan masukkan ke data
         if (_newImageFile != null) {
           Uint8List imageBytes = await _newImageFile!.readAsBytes();
           String base64String = base64Encode(imageBytes);
           dataToUpdate['profile_image_base64'] = base64String;
-
-          // Update variable lokal biar langsung berubah
           _currentImageBase64 = base64String;
-          _newImageFile = null; // Reset file sementara
+          _newImageFile = null;
         }
 
-        // Simpan ke Firestore
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -133,8 +115,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profil berhasil disimpan!'),
+            SnackBar(
+              content: Text('msg_prof_saved'.tr()),
               backgroundColor: Colors.green,
             ),
           );
@@ -151,7 +133,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isLoading = false);
   }
 
-  // Helper Date Picker
   Future<void> _selectDate() async {
     if (!_isEditing) return;
     DateTime? picked = await showDatePicker(
@@ -167,7 +148,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Widget Input
   Widget labeledField({
     required String label,
     required TextEditingController controller,
@@ -225,17 +205,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- LOGIKA MENENTUKAN GAMBAR APA YANG DITAMPILKAN ---
     ImageProvider? imageProvider;
     if (_newImageFile != null) {
-      // 1. Prioritas: Foto baru yang belum disimpan (File)
       imageProvider = FileImage(_newImageFile!);
     } else if (_currentImageBase64 != null && _currentImageBase64!.isNotEmpty) {
-      // 2. Prioritas: Foto dari database (Base64)
       imageProvider = MemoryImage(base64Decode(_currentImageBase64!));
-    } else {
-      // 3. Tidak ada foto
-      imageProvider = null;
     }
 
     return Scaffold(
@@ -253,9 +227,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             );
           },
         ),
-        title: const Text(
-          "My Profile",
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800),
+        title: Text(
+          "prof_title".tr(),
+          style: const TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         actions: [
           if (_isEditing)
@@ -271,15 +248,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
               child: Column(
                 children: [
-                  // --- AVATAR DENGAN TOMBOL EDIT ---
                   GestureDetector(
-                    onTap: _pickImage, // Klik avatar untuk ganti foto
+                    onTap: _pickImage,
                     child: Stack(
                       children: [
                         CircleAvatar(
                           radius: 50,
                           backgroundColor: const Color(0xFFD9EAFD),
-                          backgroundImage: imageProvider, // Tampilkan gambar
+                          backgroundImage: imageProvider,
                           child: imageProvider == null
                               ? const Icon(
                                   Icons.person,
@@ -288,7 +264,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 )
                               : null,
                         ),
-                        // Ikon Kamera Kecil (Hanya muncul saat mode edit)
                         if (_isEditing)
                           Positioned(
                             bottom: 0,
@@ -310,7 +285,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-
                   Text(
                     nameController.text.isEmpty ? "User" : nameController.text,
                     style: GoogleFonts.poppins(
@@ -327,8 +301,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Tombol Edit/Simpan
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -353,22 +325,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       child: Text(
-                        _isEditing ? "Simpan Perubahan" : "Edit Profil",
+                        _isEditing
+                            ? "prof_save_btn".tr()
+                            : "prof_edit_btn".tr(),
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 22),
-
-                  // Form Fields
                   labeledField(
-                    label: "Nama",
+                    label: "prof_label_name".tr(),
                     controller: nameController,
                     isReadOnly: !_isEditing,
                   ),
                   labeledField(
-                    label: "Tanggal lahir",
+                    label: "prof_label_birth".tr(),
                     controller: birthController,
                     isReadOnly: true,
                     onTap: _selectDate,
@@ -377,15 +348,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       size: 20,
                     ),
                   ),
-
-                  // Gender Dropdown
+                  // Dropdown Gender
                   Padding(
                     padding: const EdgeInsets.only(bottom: 14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Jenis Kelamin",
+                          "prof_label_gender".tr(),
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -409,11 +379,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: DropdownButton<String>(
                               value: _selectedGender,
                               isExpanded: true,
-                              hint: const Text("Pilih jenis kelamin"),
-                              items: _genderOptions.map((String value) {
+                              hint: Text("prof_gender_hint".tr()),
+                              // Logic: Bandingkan value dengan terjemahan key
+                              items: _genderKeys.map((String key) {
                                 return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
+                                  value: key.tr(), // Simpan hasil translate
+                                  child: Text(key.tr()),
                                 );
                               }).toList(),
                               onChanged: _isEditing
@@ -427,9 +398,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   ),
-
                   labeledField(
-                    label: "Telepon",
+                    label: "prof_label_phone".tr(),
                     controller: phoneController,
                     isReadOnly: !_isEditing,
                   ),

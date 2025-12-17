@@ -2,7 +2,8 @@ import 'dart:io'; // Untuk akses File System
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:path_provider/path_provider.dart'; // Wajib ada untuk akses path
+import 'package:path_provider/path_provider.dart';
+import 'package:easy_localization/easy_localization.dart'; // 1. WAJIB IMPORT INI
 
 class DataStorageScreen extends StatefulWidget {
   const DataStorageScreen({super.key});
@@ -17,13 +18,13 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
   double _cacheSizeBytes = 0;
   bool _isLoading = false;
 
-  // Data Statis (Karena App Size asli sulit didapat tanpa akses Root/Native Code)
+  // Data Statis
   final String _appSizeStr = "45.0 MB";
 
   @override
   void initState() {
     super.initState();
-    _checkCacheSize(); // Hitung cache saat layar dibuka
+    _checkCacheSize();
   }
 
   // --- LOGIKA BACKEND MENGHITUNG CACHE ---
@@ -59,35 +60,34 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
       final tempDir = await getTemporaryDirectory();
 
       if (tempDir.existsSync()) {
-        // Hapus setiap file di dalam folder temp
         final dir = Directory(tempDir.path);
         dir.listSync().forEach((FileSystemEntity entity) {
           try {
             entity.deleteSync(recursive: true);
           } catch (e) {
-            // Abaikan file yang sedang dikunci sistem
+            // Abaikan file yang dikunci sistem
           }
         });
       }
 
-      // Simulasi delay sedikit agar user merasa ada proses
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('File sampah berhasil di bersihkan!'),
+          SnackBar(
+            content: Text(
+              "storage_clean_success".tr(),
+            ), // "File sampah berhasil dibersihkan!"
             backgroundColor: Colors.green,
           ),
         );
-        // Hitung ulang (Harusnya jadi 0)
         await _checkCacheSize();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${'storage_error'.tr()}$e")), // "Gagal: ..."
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -120,9 +120,9 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.black54),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            "Data dan penyimpanan",
-            style: TextStyle(
+          title: Text(
+            "storage_title".tr(), // "Data dan penyimpanan"
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
               color: Colors.black87,
@@ -136,7 +136,7 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Penggunaan Penyimpanan',
+              "storage_usage".tr(), // "Penggunaan Penyimpanan"
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -145,33 +145,34 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Card 1: Ukuran Aplikasi (Statis)
+            // Card 1: Ukuran Aplikasi
             _buildStorageInfoCard(
               context,
-              title: 'Ukuran Aplikasi',
-              value: _appSizeStr, // Statis
+              title: "storage_app_size".tr(), // "Ukuran Aplikasi"
+              value: _appSizeStr,
               icon: Icons.smartphone_outlined,
               color: const Color(0xFF2E7DF6),
             ),
             const SizedBox(height: 12),
 
-            // Card 2: Cache (Dinamis / Real)
+            // Card 2: Cache
             _buildStorageInfoCard(
               context,
-              title: 'Cache & File Sampah',
-              value: _cacheSizeStr, // Berubah sesuai data asli
+              title: "storage_cache".tr(), // "Cache & File Sampah"
+              value: _cacheSizeStr,
               icon: Icons.cached_outlined,
               color: const Color(0xFF21B356),
             ),
             const SizedBox(height: 12),
 
-            // Card 3: Total (Dinamis)
+            // Card 3: Total
             _buildStorageInfoCard(
               context,
-              title: 'Total Data',
+              title: "storage_total".tr(), // "Total Data"
               value: _isLoading
-                  ? "Menghitung..."
-                  : _cacheSizeStr, // Sementara kita samakan dgn cache karena data user sulit diakses
+                  ? "storage_calculating"
+                        .tr() // "Menghitung..."
+                  : _cacheSizeStr,
               icon: Icons.sd_storage_outlined,
               color: const Color(0xFFE35247),
             ),
@@ -180,7 +181,6 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                // Jika cache sudah 0 atau sedang loading, tombol mati
                 onPressed: (_isLoading || _cacheSizeBytes == 0)
                     ? null
                     : _clearCache,
@@ -195,7 +195,10 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
                       )
                     : const Icon(FontAwesomeIcons.broom, size: 20),
                 label: Text(
-                  _isLoading ? 'Membersihkan...' : 'Bersihkan Cache',
+                  _isLoading
+                      ? "storage_clearing"
+                            .tr() // "Membersihkan..."
+                      : "storage_btn_clear".tr(), // "Bersihkan Cache"
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -215,13 +218,14 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
               ),
             ),
 
-            // Info tambahan
+            // Info tambahan jika bersih
             if (_cacheSizeBytes == 0 && !_isLoading)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
                 child: Center(
                   child: Text(
-                    "Penyimpanan bersih optimal!",
+                    "storage_clean_optimal"
+                        .tr(), // "Penyimpanan bersih optimal!"
                     style: TextStyle(color: Colors.green[600], fontSize: 12),
                   ),
                 ),
@@ -287,7 +291,6 @@ class _DataStorageScreenState extends State<DataStorageScreen> {
               ],
             ),
           ),
-          // Hapus panah jika hanya info statis, atau biarkan jika ingin detail
         ],
       ),
     );

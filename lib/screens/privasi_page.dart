@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Import ini
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:easy_localization/easy_localization.dart'; // 1. WAJIB IMPORT INI
 import 'profile_settings_screen.dart';
 
 class PrivasiPage extends StatefulWidget {
@@ -14,12 +15,12 @@ class _PrivasiPageState extends State<PrivasiPage> {
   bool aksesLokasi = true;
   bool autentikasi = false;
   bool izinData = true;
-  bool _isLoading = true; // Loading saat baca data awal
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadSettings(); // Baca settingan lama saat halaman dibuka
+    _loadSettings();
   }
 
   // --- FUNGSI BACA SETTINGAN DARI HP ---
@@ -64,9 +65,9 @@ class _PrivasiPageState extends State<PrivasiPage> {
             }
           },
         ),
-        title: const Text(
-          "Privasi",
-          style: TextStyle(
+        title: Text(
+          "privacy_title".tr(), // "Privasi"
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w800,
             color: Colors.black87,
@@ -82,15 +83,17 @@ class _PrivasiPageState extends State<PrivasiPage> {
                   const SizedBox(height: 30),
 
                   // Toggle Lokasi
-                  buildToggleCard("Akses Lokasi", aksesLokasi, (val) {
+                  buildToggleCard("privacy_location".tr(), aksesLokasi, (val) {
+                    // "Akses Lokasi"
                     setState(() => aksesLokasi = val);
                     _updateSetting('privacy_location', val);
-                    // Opsional: Jika dimatikan, bisa show dialog peringatan
+
                     if (!val) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text(
-                            'Fitur peta mungkin tidak berjalan optimal.',
+                            "privacy_location_warn"
+                                .tr(), // "Fitur peta mungkin tidak..."
                           ),
                         ),
                       );
@@ -99,14 +102,16 @@ class _PrivasiPageState extends State<PrivasiPage> {
                   const SizedBox(height: 20),
 
                   // Toggle 2FA
-                  buildToggleCard("Authentikasi 2 langkah", autentikasi, (val) {
+                  buildToggleCard("privacy_2fa".tr(), autentikasi, (val) {
+                    // "Authentikasi 2 langkah"
                     setState(() => autentikasi = val);
                     _updateSetting('privacy_2fa', val);
                   }),
                   const SizedBox(height: 20),
 
                   // Toggle Data
-                  buildToggleCard("Izin akses data perangkat", izinData, (val) {
+                  buildToggleCard("privacy_data".tr(), izinData, (val) {
+                    // "Izin akses data..."
                     setState(() => izinData = val);
                     _updateSetting('privacy_data', val);
                   }),
@@ -126,7 +131,7 @@ class _PrivasiPageState extends State<PrivasiPage> {
           borderRadius: BorderRadius.circular(30),
           boxShadow: const [
             BoxShadow(
-              color: Colors.black12, // Dibuat lebih soft (12 bukan 26)
+              color: Colors.black12,
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -135,18 +140,20 @@ class _PrivasiPageState extends State<PrivasiPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 15,
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
+            Expanded(
+              // Pakai Expanded agar teks panjang tidak error overflow
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
             Switch(
               value: value,
               onChanged: onChanged,
-              // Warna aktif disesuaikan dengan tema biru aplikasi (opsional)
               activeColor: const Color(0xFF4894FE),
               activeTrackColor: const Color(0xFFBEE3FF),
               inactiveThumbColor: Colors.grey.shade200,

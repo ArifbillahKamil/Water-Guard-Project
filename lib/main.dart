@@ -14,7 +14,7 @@ void main() async {
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('id'), Locale('en')],
-      path: 'assets/translations', // Path ke file json tadi
+      path: 'assets/translations',
       fallbackLocale: const Locale('id'),
       child: const MyApp(),
     ),
@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
-      home: const Dashboard(),
+      home: const SplashScreen(),
     );
   }
 }

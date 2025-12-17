@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/screens/dashboard_screen.dart';
 import 'package:flutter_application_1/screens/forgot_password.dart';
 import 'package:flutter_application_1/screens/register_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:easy_localization/easy_localization.dart'; // 1. WAJIB IMPORT INI
 import '../widgets/double_wave_header.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -23,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool rememberMe = false;
   bool obscurePassword = true;
-  bool _isLoading = false; // Status loading
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -34,33 +35,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // --- FUNGSI LOGIN ---
   Future<void> _loginUser() async {
-    // 1. Cek Validasi Input
     if (!_formKey.currentState!.validate()) return;
 
-    // 2. Tampilkan Loading
     setState(() => _isLoading = true);
 
     try {
-      // 3. Proses Login ke Firebase
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
       if (mounted) {
-        // 4. Jika Berhasil, Pindah ke Dashboard
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const Dashboard()),
         );
       }
     } on FirebaseAuthException catch (e) {
-      // 5. Handle Error (Password Salah / User tidak ada)
-      String message = "Login Gagal";
+      String message = "err_login_failed".tr(); // Translate Judul Error
+
       if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-        message = "Email atau sandi salah.";
+        message = "err_invalid_cred".tr();
       } else if (e.code == 'invalid-email') {
-        message = "Format email tidak valid.";
+        message = "err_email_fmt".tr();
       }
 
       if (mounted) {
@@ -69,7 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      // Matikan loading apapun hasilnya
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -83,20 +79,17 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // ===== Double Wave Header =====
-            const SizedBox(
-              height: 150, // Beri tinggi pasti agar aman
-              child: DoubleWaveHeader(),
-            ),
+            const SizedBox(height: 150, child: DoubleWaveHeader()),
 
             // ===== Judul "Masuk" =====
-            const Padding(
-              padding: EdgeInsets.only(top: 8, bottom: 16),
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 16),
               child: Text(
-                "Masuk",
-                style: TextStyle(
+                "login_header".tr(), // Translate Judul
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF4894FE), // biru utama
+                  color: Color(0xFF4894FE),
                   shadows: [
                     Shadow(
                       offset: Offset(1, 4),
@@ -112,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Form(
-                key: _formKey, // Pasang key form
+                key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -120,17 +113,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: "Email",
-                        prefixIcon: Icon(Icons.email_outlined),
+                      decoration: InputDecoration(
+                        labelText: "login_email_label".tr(), // Translate Label
+                        prefixIcon: const Icon(Icons.email_outlined),
                       ),
-                      // Validasi input
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Email wajib diisi';
+                          return "err_email_req".tr(); // Translate Error
                         }
                         if (!value.contains('@')) {
-                          return 'Format email salah';
+                          return "err_email_fmt".tr();
                         }
                         return null;
                       },
@@ -142,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       obscureText: obscurePassword,
                       decoration: InputDecoration(
-                        labelText: "Sandi",
+                        labelText: "login_pass_label".tr(), // Translate Label
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -159,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Sandi wajib diisi';
+                          return "err_pass_req".tr(); // Translate Error
                         }
                         return null;
                       },
@@ -180,7 +172,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               },
                             ),
-                            const Text("Ingat saya"),
+                            Text(
+                              "login_remember".tr(),
+                            ), // Translate "Ingat saya"
                           ],
                         ),
                         TextButton(
@@ -192,7 +186,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             );
                           },
-                          child: const Text("Lupa sandi?"),
+                          child: Text(
+                            "login_forgot".tr(),
+                          ), // Translate "Lupa sandi?"
                         ),
                       ],
                     ),
@@ -201,12 +197,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     // ===== Tombol Masuk =====
                     ElevatedButton(
                       onPressed: _isLoading
-                          ? null // Disable tombol saat loading
+                          ? null
                           : () {
-                              FocusScope.of(
-                                context,
-                              ).unfocus(); // Tutup keyboard
-                              _loginUser(); // Panggil fungsi login
+                              FocusScope.of(context).unfocus();
+                              _loginUser();
                             },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -225,9 +219,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: Color(0xFF4894FE),
                               ),
                             )
-                          : const Text(
-                              "Masuk",
-                              style: TextStyle(
+                          : Text(
+                              "login_btn".tr(), // Translate Tombol
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF4894FE),
@@ -248,13 +242,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           );
                         },
-                        child: const Text.rich(
+                        child: Text.rich(
                           TextSpan(
-                            text: "Tidak memiliki akun? ",
+                            text: "login_no_account"
+                                .tr(), // "Tidak punya akun?"
                             children: [
                               TextSpan(
-                                text: "Mendaftar",
-                                style: TextStyle(
+                                text: "login_register".tr(), // "Mendaftar"
+                                style: const TextStyle(
                                   color: Color(0xFF4894FE),
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -269,22 +264,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Divider
                     Row(
-                      children: const [
-                        Expanded(child: Divider()),
+                      children: [
+                        const Expanded(child: Divider()),
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                          child: Text("Atau"),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text("login_or".tr()), // "Atau"
                         ),
-                        Expanded(child: Divider()),
+                        const Expanded(child: Divider()),
                       ],
                     ),
                     const SizedBox(height: 16),
 
-                    // ===== Tombol sosial media =====
+                    // ===== Tombol sosial media (Tetap) =====
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Google
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: Colors.white,
@@ -295,8 +289,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-
-                        // Facebook
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: Colors.white,
@@ -307,8 +299,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-
-                        // Apple
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: Colors.white,

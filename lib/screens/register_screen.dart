@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Auth
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart'; // 1. WAJIB IMPORT INI
 import '../widgets/double_wave_header.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -25,7 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // State
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
-  bool _isLoading = false; // Untuk loading button
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -39,51 +40,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // --- FUNGSI REGISTER ---
   Future<void> _registerUser() async {
-    // 1. Cek Validasi Form
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      // 2. Buat Akun di Firebase Authentication
+      // Buat Akun Firebase
       final userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
             email: emailController.text.trim(),
             password: passwordController.text.trim(),
           );
 
-      // Ambil UID user yang baru dibuat
       String uid = userCredential.user!.uid;
 
-      // 3. Simpan Biodata Tambahan ke Firestore
+      // Simpan Biodata ke Firestore
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
         'username': usernameController.text.trim(),
         'email': emailController.text.trim(),
         'phone': phoneController.text.trim(),
-        'role': 'user', // Default role
+        'role': 'user',
         'created_at': FieldValue.serverTimestamp(),
       });
 
       if (mounted) {
-        // 4. Sukses
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registrasi Berhasil! Silakan Masuk.'),
+          SnackBar(
+            content: Text("msg_reg_success".tr()), // Translate Pesan Sukses
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context); // Kembali ke Login Screen
+        Navigator.pop(context);
       }
     } on FirebaseAuthException catch (e) {
-      // Handle Error Firebase
-      String message = "Terjadi kesalahan.";
+      String message = "msg_general_error".tr();
+
+      // Translate Pesan Error Firebase
       if (e.code == 'weak-password') {
-        message = "Password terlalu lemah (minimal 8 karakter).";
+        message = "msg_weak_pass".tr();
       } else if (e.code == 'email-already-in-use') {
-        message = "Email ini sudah terdaftar.";
+        message = "msg_email_used".tr();
       } else if (e.code == 'invalid-email') {
-        message = "Format email salah.";
+        message = "err_email_invalid".tr();
       }
 
       if (mounted) {
@@ -110,17 +109,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // ===== Double Wave Header =====
-            const SizedBox(
-              height: 150, // Pastikan ada tinggi agar header muncul
-              child: DoubleWaveHeader(),
-            ),
+            const SizedBox(height: 150, child: DoubleWaveHeader()),
 
-            // ===== Judul "Mendaftar" =====
-            const Padding(
-              padding: EdgeInsets.only(top: 8, bottom: 16),
+            // ===== Judul =====
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 16),
               child: Text(
-                "Mendaftar",
-                style: TextStyle(
+                "reg_title".tr(), // Translate Judul
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF4894FE),
@@ -146,12 +142,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Username
                     TextFormField(
                       controller: usernameController,
-                      decoration: const InputDecoration(
-                        labelText: "Nama pengguna",
-                        prefixIcon: Icon(Icons.person_outline),
+                      decoration: InputDecoration(
+                        labelText: "reg_username".tr(), // Translate Label
+                        prefixIcon: const Icon(Icons.person_outline),
                       ),
-                      validator: (value) =>
-                          value!.isEmpty ? "Nama wajib diisi" : null,
+                      validator: (value) => value!.isEmpty
+                          ? "err_username".tr()
+                          : null, // Translate Error
                     ),
                     const SizedBox(height: 16),
 
@@ -159,12 +156,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     TextFormField(
                       controller: phoneController,
                       keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: "Nomor telepon",
-                        prefixIcon: Icon(Icons.phone),
+                      decoration: InputDecoration(
+                        labelText: "reg_phone".tr(),
+                        prefixIcon: const Icon(Icons.phone),
                       ),
                       validator: (value) =>
-                          value!.isEmpty ? "Nomor telepon wajib diisi" : null,
+                          value!.isEmpty ? "err_phone".tr() : null,
                     ),
                     const SizedBox(height: 16),
 
@@ -172,14 +169,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     TextFormField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: "Email",
-                        prefixIcon: Icon(Icons.email_outlined),
+                      decoration: InputDecoration(
+                        labelText: "reg_email".tr(),
+                        prefixIcon: const Icon(Icons.email_outlined),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty)
-                          return "Email wajib diisi";
-                        if (!value.contains('@')) return "Format email salah";
+                          return "err_email_empty".tr();
+                        if (!value.contains('@'))
+                          return "err_email_invalid".tr();
                         return null;
                       },
                     ),
@@ -190,7 +188,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: passwordController,
                       obscureText: obscurePassword,
                       decoration: InputDecoration(
-                        labelText: "Sandi",
+                        labelText: "reg_pass".tr(),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -207,8 +205,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty)
-                          return "Sandi wajib diisi";
-                        if (value.length < 8) return "Sandi minimal 8 karakter";
+                          return "err_pass_empty".tr();
+                        if (value.length < 8) return "err_pass_short".tr();
                         return null;
                       },
                     ),
@@ -219,7 +217,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: confirmPasswordController,
                       obscureText: obscureConfirmPassword,
                       decoration: InputDecoration(
-                        labelText: "Ulangi sandi",
+                        labelText: "reg_confirm_pass".tr(),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -236,9 +234,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty)
-                          return "Ulangi sandi wajib diisi";
+                          return "err_confirm_empty".tr();
                         if (value != passwordController.text)
-                          return "Sandi tidak sama";
+                          return "err_confirm_match".tr();
                         return null;
                       },
                     ),
@@ -253,7 +251,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 4,
-                        backgroundColor: const Color(0xFFD9EAFD), // biru muda
+                        backgroundColor: const Color(0xFFD9EAFD),
                       ),
                       child: _isLoading
                           ? const SizedBox(
@@ -264,12 +262,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 color: Color(0xFF4894FE),
                               ),
                             )
-                          : const Text(
-                              "Mendaftar",
-                              style: TextStyle(
+                          : Text(
+                              "reg_btn".tr(), // Translate Tombol
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF4894FE), // biru utama
+                                color: Color(0xFF4894FE),
                               ),
                             ),
                     ),
@@ -278,15 +276,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Center(
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.pop(context); // Kembali ke Login
+                          Navigator.pop(context);
                         },
-                        child: const Text.rich(
+                        child: Text.rich(
                           TextSpan(
-                            text: "Sudah memiliki akun? ",
+                            text: "reg_have_account"
+                                .tr(), // "Sudah punya akun?"
                             children: [
                               TextSpan(
-                                text: "Masuk",
-                                style: TextStyle(
+                                text: "reg_login".tr(), // "Masuk"
+                                style: const TextStyle(
                                   color: Color(0xFF4894FE),
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -300,22 +299,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Divider
                     Row(
-                      children: const [
-                        Expanded(child: Divider()),
+                      children: [
+                        const Expanded(child: Divider()),
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                          child: Text("Atau"),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text("reg_or".tr()), // "Atau"
                         ),
-                        Expanded(child: Divider()),
+                        const Expanded(child: Divider()),
                       ],
                     ),
                     const SizedBox(height: 16),
 
-                    // Tombol sosial media
+                    // Tombol Sosial Media (Tetap sama karena Icon)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Google
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: Colors.white,
@@ -326,8 +324,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-
-                        // Facebook
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: Colors.white,
@@ -338,8 +334,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-
-                        // X / Twitter
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: Colors.white,

@@ -4,6 +4,7 @@ import 'dart:typed_data'; // Untuk Uint8List
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart'; // 1. WAJIB IMPORT INI
 
 import 'package:flutter_application_1/screens/bahasa_screen.dart';
 import 'package:flutter_application_1/screens/dashboard_screen.dart';
@@ -62,16 +63,19 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     bool? confirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Keluar Akun"),
-        content: const Text("Apakah Anda yakin ingin keluar?"),
+        title: Text("logout_title".tr()), // Translate Judul Dialog
+        content: Text("logout_msg".tr()), // Translate Isi Dialog
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Batal"),
+            child: Text("btn_cancel".tr()), // Translate Batal
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Keluar", style: TextStyle(color: Colors.red)),
+            child: Text(
+              "btn_confirm_logout".tr(), // Translate Keluar
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -91,10 +95,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. LOGIK UNTUK MENAMPILKAN NAMA BAHASA SAAT INI
+    // Cek kode bahasa (id / en) lalu tentukan teks yang tampil
+    String currentLangName = context.locale.languageCode == 'en'
+        ? 'English (US)'
+        : 'Bahasa Indonesia';
+
     // Logic tampilan gambar avatar
     ImageProvider? avatarImage;
     if (_imageBase64 != null && _imageBase64!.isNotEmpty) {
-      avatarImage = MemoryImage(base64Decode(_imageBase64!));
+      try {
+        avatarImage = MemoryImage(base64Decode(_imageBase64!));
+      } catch (e) {
+        debugPrint("Error decoding image: $e");
+      }
     }
 
     return Scaffold(
@@ -159,12 +173,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 Expanded(
                   child: ListView(
                     children: [
+                      // MENU AKUN
                       _SettingsItem(
                         icon: Icons.person_add_alt,
-                        title: "Akun",
-                        subtitle: "Edit profile, email, data diri",
+                        title: "set_account".tr(), // "Akun"
+                        subtitle: "set_account_desc".tr(),
                         onTap: () {
-                          // Gunakan push biasa agar saat kembali, initstate jalan lagi
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
@@ -173,11 +187,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           );
                         },
                       ),
-                      // ... (Item lainnya sama seperti sebelumnya) ...
+
+                      // MENU PRIVASI
                       _SettingsItem(
                         icon: Icons.lock_outline,
-                        title: "Privasi",
-                        subtitle: "Privasi data diri kamu",
+                        title: "set_privacy".tr(), // "Privasi"
+                        subtitle: "set_privacy_desc".tr(),
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -185,10 +200,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ),
                         ),
                       ),
+
+                      // MENU NOTIFIKASI
                       _SettingsItem(
                         icon: Icons.notifications_none,
-                        title: "Notifikasi",
-                        subtitle: "Pesan, laporan, notifikasi",
+                        title: "set_notif".tr(), // "Notifikasi"
+                        subtitle: "set_notif_desc".tr(),
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -196,10 +213,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ),
                         ),
                       ),
+
+                      // MENU DATA & PENYIMPANAN
                       _SettingsItem(
                         icon: Icons.cloud_download_outlined,
-                        title: "Data dan penyimpanan",
-                        subtitle: "Penggunaan internet, penyimpanan",
+                        title: "set_storage".tr(), // "Data dan penyimpanan"
+                        subtitle: "set_storage_desc".tr(),
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -207,10 +226,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ),
                         ),
                       ),
+
+                      // MENU BAHASA (Subtitle Dinamis)
                       _SettingsItem(
                         icon: Icons.language,
-                        title: "Bahasa aplikasi",
-                        subtitle: "Bahasa Indonesia",
+                        title: "set_language".tr(), // "Bahasa aplikasi"
+                        subtitle:
+                            currentLangName, // <--- INI BERUBAH SESUAI PILIHAN
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -218,10 +240,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ),
                         ),
                       ),
+
+                      // MENU BANTUAN
                       _SettingsItem(
                         icon: Icons.help_outline,
-                        title: "Bantuan",
-                        subtitle: "Pusat bantuan, hubungi kami",
+                        title: "set_help".tr(), // "Bantuan"
+                        subtitle: "set_help_desc".tr(),
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -229,11 +253,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 20),
+
+                      // MENU KELUAR
                       _SettingsItem(
                         icon: Icons.logout,
-                        title: "Keluar",
-                        subtitle: "Keluar dari akun",
+                        title: "set_logout".tr(), // "Keluar"
+                        subtitle: "set_logout_desc".tr(),
                         iconColor: Colors.red,
                         textColor: Colors.red,
                         onTap: _logout,
