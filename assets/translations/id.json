@@ -130,5 +130,23 @@
   "prof_gender_hint": "Pilih jenis kelamin",
   "prof_gender_male": "Laki-laki",
   "prof_gender_female": "Perempuan",
-  "msg_prof_saved": "Profil berhasil disimpan!"
+  "msg_prof_saved": "Profil berhasil disimpan!",
+
+  "admin_menu_title": "Panel Admin & Relawan",
+  "admin_menu_desc": "Lihat Semua Laporan",
+  "admin_list_title": "Daftar Laporan Warga",
+  "admin_status_update": "Update Status Laporan",
+  "status_pending": "Menunggu",
+  "status_process": "Diproses",
+  "status_done": "Selesai",
+  "status_rejected": "Ditolak",
+  "msg_status_updated": "Status berhasil diperbarui!",
+
+  "title_role_admin": "Panel Laporan (Admin)",
+  "title_role_volunteer": "Pantauan Laporan (Relawan)",
+
+  "btn_admin_panel": "List Laporan (Admin)",
+  "btn_volunteer_panel": "Panel Relawan",
+  "desc_admin_panel": "Kelola semua laporan",
+  "desc_volunteer_panel": "Pantau laporan masuk"
 }

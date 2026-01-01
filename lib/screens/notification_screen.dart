@@ -3,15 +3,62 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:easy_localization/easy_localization.dart'; // 1. WAJIB IMPORT INI
+import 'package:easy_localization/easy_localization.dart';
 
-class NotificationPage extends StatelessWidget {
+class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    User? user = FirebaseAuth.instance.currentUser;
+  State<NotificationPage> createState() => _NotificationPageState();
+}
 
+class _NotificationPageState extends State<NotificationPage> {
+  // Variabel untuk menyimpan role user
+  String _userRole = 'user';
+  final User? user = FirebaseAuth.instance.currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserRole();
+  }
+
+  // Fungsi Cek Role ke Firestore
+  Future<void> _checkUserRole() async {
+    if (user != null) {
+      try {
+        DocumentSnapshot doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uid)
+            .get();
+
+        if (doc.exists) {
+          setState(() {
+            _userRole = doc['role'] ?? 'user';
+          });
+        }
+      } catch (e) {
+        debugPrint("Gagal cek role: $e");
+      }
+    }
+  }
+
+  // Fungsi Debug (Hanya untuk Admin)
+  Future<void> _createDummyNotification(String? uid) async {
+    if (uid == null) return;
+    await FirebaseFirestore.instance.collection('notifikasi').add({
+      'uid_user': uid,
+      'judul': 'Test Admin',
+      'sub_judul': 'Pengecekan Sistem',
+      'pesan': 'Ini adalah notifikasi tes yang hanya bisa dibuat oleh admin.',
+      'tipe': 'alert', // Coba tipe alert biar merah
+      'tanggal': FieldValue.serverTimestamp(),
+      'is_read': false,
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       appBar: PreferredSize(
@@ -33,20 +80,22 @@ class NotificationPage extends StatelessWidget {
             ),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.add_circle_outline, color: Colors.grey),
-              onPressed: () => _createDummyNotification(user?.uid),
-              tooltip: "Test Notif",
-            ),
+            // LOGIKA: Tombol hanya muncul jika role == admin
+            if (_userRole == 'admin')
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline, color: Colors.grey),
+                onPressed: () => _createDummyNotification(user?.uid),
+                tooltip: "Test Notif (Admin Only)",
+              ),
           ],
         ),
       ),
       body: user == null
-          ? Center(child: Text("notif_login_req".tr())) // "Silakan login..."
+          ? Center(child: Text("notif_login_req".tr()))
           : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('notifikasi')
-                  .where('uid_user', isEqualTo: user.uid)
+                  .where('uid_user', isEqualTo: user!.uid)
                   .orderBy('tanggal', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
@@ -57,7 +106,7 @@ class NotificationPage extends StatelessWidget {
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
-                      "${'notif_error'.tr()}${snapshot.error}", // "Terjadi kesalahan: ..."
+                      "${'notif_error'.tr()}${snapshot.error}",
                       style: const TextStyle(color: Colors.red),
                     ),
                   );
@@ -75,7 +124,7 @@ class NotificationPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          "notif_empty".tr(), // "Belum ada notifikasi"
+                          "notif_empty".tr(),
                           style: GoogleFonts.poppins(color: Colors.grey),
                         ),
                       ],
@@ -112,11 +161,9 @@ class NotificationPage extends StatelessWidget {
                       iconData = Icons.local_offer_outlined;
                     }
 
-                    // Format Tanggal (Mengikuti Bahasa HP)
                     String timeAgo = '';
                     if (data['tanggal'] != null) {
                       Timestamp ts = data['tanggal'];
-                      // context.locale.toString() akan otomatis ambil 'id' atau 'en'
                       timeAgo = DateFormat(
                         'dd MMM, HH:mm',
                         context.locale.toString(),
@@ -124,8 +171,7 @@ class NotificationPage extends StatelessWidget {
                     }
 
                     return CustomNotificationCard(
-                      title:
-                          data['judul'] ?? 'Info', // Data DB tidak di-translate
+                      title: data['judul'] ?? 'Info',
                       titleColor: themeColor,
                       subtitleBold: data['sub_judul'] ?? '',
                       message: data['pesan'] ?? '',
@@ -139,24 +185,10 @@ class NotificationPage extends StatelessWidget {
             ),
     );
   }
-
-  // Fungsi Debug
-  Future<void> _createDummyNotification(String? uid) async {
-    if (uid == null) return;
-    await FirebaseFirestore.instance.collection('notifikasi').add({
-      'uid_user': uid,
-      'judul': 'Status Laporan',
-      'sub_judul': 'Test Notifikasi',
-      'pesan': 'Ini notifikasi test. Format tanggal akan menyesuaikan bahasa.',
-      'tipe': 'success',
-      'tanggal': FieldValue.serverTimestamp(),
-      'is_read': false,
-    });
-  }
 }
 
 // ==========================================
-// CARD WIDGET
+// CARD WIDGET (DIPERBAIKI AGAR TIDAK ERROR LAYOUT)
 // ==========================================
 class CustomNotificationCard extends StatefulWidget {
   final String title;
@@ -189,6 +221,7 @@ class _CustomNotificationCardState extends State<CustomNotificationCard> {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut, // Animasi lebih halus
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -226,17 +259,25 @@ class _CustomNotificationCardState extends State<CustomNotificationCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ROW JUDUL & WAKTU (Diperbaiki)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start, // Align top
                       children: [
-                        Text(
-                          widget.title,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: widget.titleColor,
+                        // Expanded agar judul panjang turun ke bawah, tidak nabrak waktu
+                        Expanded(
+                          child: Text(
+                            widget.title,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: widget.titleColor,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        const SizedBox(width: 8), // Jarak aman
                         Text(
                           widget.time,
                           style: TextStyle(
@@ -246,8 +287,10 @@ class _CustomNotificationCardState extends State<CustomNotificationCard> {
                         ),
                       ],
                     ),
+
                     if (widget.subtitleBold.isNotEmpty)
                       const SizedBox(height: 4),
+
                     if (widget.subtitleBold.isNotEmpty)
                       Text(
                         widget.subtitleBold,
@@ -258,6 +301,7 @@ class _CustomNotificationCardState extends State<CustomNotificationCard> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+
                     const SizedBox(height: 6),
 
                     // Teks Pesan
@@ -284,16 +328,13 @@ class _CustomNotificationCardState extends State<CustomNotificationCard> {
                 child: Container(
                   width: 38,
                   height: 38,
+                  // Hapus dekorasi shadow berlebih di tombol kecil untuk performa
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 4,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                    ), // Ganti shadow dgn border tipis agar rapi
                   ),
                   child: Center(
                     child: AnimatedRotation(
@@ -301,7 +342,7 @@ class _CustomNotificationCardState extends State<CustomNotificationCard> {
                       duration: const Duration(milliseconds: 200),
                       child: Icon(
                         Icons.arrow_forward_ios,
-                        size: 16,
+                        size: 14, // Perkecil icon dikit
                         color: widget.iconColor.withOpacity(0.9),
                       ),
                     ),
@@ -322,10 +363,21 @@ class _CustomNotificationCardState extends State<CustomNotificationCard> {
                     _isExpanded = false;
                   });
                 },
-                style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey[600],
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 child: Text(
-                  "notif_close".tr(), // "Tutup"
-                  style: const TextStyle(fontSize: 12),
+                  "notif_close".tr(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),

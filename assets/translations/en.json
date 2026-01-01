@@ -130,5 +130,23 @@
   "prof_gender_hint": "Select gender",
   "prof_gender_male": "Male",
   "prof_gender_female": "Female",
-  "msg_prof_saved": "Profile saved successfully!"
+  "msg_prof_saved": "Profile saved successfully!",
+
+  "admin_menu_title": "Admin & Volunteer Panel",
+  "admin_menu_desc": "Manage and monitor all incoming reports",
+  "admin_list_title": "Citizen Reports List",
+  "admin_status_update": "Update Report Status",
+  "status_pending": "Pending",
+  "status_process": "In Progress",
+  "status_done": "Completed",
+  "status_rejected": "Rejected",
+  "msg_status_updated": "Status updated successfully!",
+
+  "title_role_admin": "Report List (Admin)",
+  "title_role_volunteer": "Report Monitor (Volunteer)",
+
+  "btn_admin_panel": "Report List (Admin)",
+  "btn_volunteer_panel": "Volunteer Panel",
+  "desc_admin_panel": "Manage all incoming reports",
+  "desc_volunteer_panel": "Monitor incoming reports"
 }

@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:geolocator/geolocator.dart'; // Import Geolocator
-import 'package:firebase_auth/firebase_auth.dart'; // Import Auth
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:geolocator/geolocator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
-import 'package:easy_localization/easy_localization.dart'; // 1. WAJIB IMPORT INI
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import 'package:flutter_application_1/screens/Worker_Sign_up.dart';
 import 'package:flutter_application_1/screens/lokasi_bermasalah.dart';
 import 'package:flutter_application_1/screens/notification_screen.dart';
 import 'package:flutter_application_1/screens/profile_settings_screen.dart';
 import 'package:flutter_application_1/screens/report_screen.dart';
+import 'package:flutter_application_1/screens/admin_reportlist_screen.dart';
 
-// =============================
-// DASHBOARD SCREEN (STATEFUL)
-// =============================
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
@@ -27,16 +25,16 @@ class Dashboard extends StatefulWidget {
 class _DashboardState extends State<Dashboard> {
   String _locationMessage = "Mencari lokasi...";
   String _userName = "User";
+  String _userRole = "user";
 
   @override
   void initState() {
     super.initState();
-    _getUserName();
-    _getCurrentLocation(); // Cek lokasi saat awal buka
+    _getUserData();
+    _getCurrentLocation();
   }
 
-  // --- AMBIL NAMA USER ---
-  Future<void> _getUserName() async {
+  Future<void> _getUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
@@ -48,41 +46,31 @@ class _DashboardState extends State<Dashboard> {
         if (userDoc.exists) {
           setState(() {
             _userName = userDoc['username'] ?? "User";
+            _userRole = userDoc['role'] ?? "user";
           });
         }
       } catch (e) {
-        debugPrint("Gagal mengambil nama user: $e");
+        debugPrint("Gagal data user: $e");
       }
     }
   }
 
-  // --- 2. FUNGSI AMBIL LOKASI (DENGAN CEK PRIVASI) ---
   Future<void> _getCurrentLocation() async {
-    // A. CEK SAKLAR PRIVASI DULU
     final prefs = await SharedPreferences.getInstance();
-    // Default true jika belum pernah diset
     bool isLocationAllowed = prefs.getBool('privacy_location') ?? true;
 
     if (!isLocationAllowed) {
-      if (mounted) {
-        setState(() {
-          _locationMessage = "Lokasi Disembunyikan"; // Ubah teks jika dimatikan
-        });
-      }
-      return; // Stop, jangan akses GPS
+      if (mounted) setState(() => _locationMessage = "Lokasi Disembunyikan");
+      return;
     }
 
-    // B. Jika diizinkan, lanjut akses GPS seperti biasa
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       if (mounted) setState(() => _locationMessage = "GPS Mati");
       return;
     }
 
-    permission = await Geolocator.checkPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
@@ -116,18 +104,26 @@ class _DashboardState extends State<Dashboard> {
     final width = MediaQuery.of(context).size.width;
     final padding = width * 0.05;
 
+    // --- LOGIKA TEXT DASHBOARD ---
+    // Tentukan Judul dan Deskripsi Tombol berdasarkan Role
+    String menuTitleKey = _userRole == 'volunteer'
+        ? 'btn_volunteer_panel' // "Panel Relawan"
+        : 'btn_admin_panel'; // "Panel Admin"
+
+    String menuDescKey = _userRole == 'volunteer'
+        ? 'desc_volunteer_panel' // "Pantau laporan masuk"
+        : 'desc_admin_panel'; // "Kelola semua laporan warga"
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F8),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // HEADER (User Name dilempar ke widget Header)
               _DashboardHeader(userName: _userName),
 
               const SizedBox(height: 40),
 
-              // KOORDINAT
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: padding),
                 child: _CoordinateRow(coordinate: _locationMessage),
@@ -135,17 +131,103 @@ class _DashboardState extends State<Dashboard> {
 
               const SizedBox(height: 20),
 
-              // MENU UTAMA
+              // ==========================================
+              // MENU KHUSUS ADMIN / RELAWAN (CARD BESAR)
+              // ==========================================
+              if (_userRole == 'admin' || _userRole == 'volunteer')
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: padding),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              AdminReportListScreen(userRole: _userRole),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2E3192), Color(0xFF1BFFFF)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.admin_panel_settings,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // JUDUL TOMBOL SESUAI ROLE
+                                Text(
+                                  menuTitleKey.tr(),
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                // DESKRIPSI TOMBOL SESUAI ROLE
+                                Text(
+                                  menuDescKey.tr(),
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+              // ==========================================
+              // MENU UTAMA (Lapor, Relawan, Peta)
+              // ==========================================
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: padding),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Menu 1: Lapor (Selalu Buka)
                     _RoundMenu(
                       icon: FontAwesomeIcons.fileCircleExclamation,
-                      label: 'menu_report'.tr(), // <--- UPDATE BAHASA
+                      label: 'menu_report'.tr(),
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -153,11 +235,9 @@ class _DashboardState extends State<Dashboard> {
                         ),
                       ),
                     ),
-
-                    // Menu 2: Daftar Relawan (Selalu Buka)
                     _RoundMenu(
                       icon: FontAwesomeIcons.userPlus,
-                      label: 'menu_volunteer'.tr(), // <--- UPDATE BAHASA
+                      label: 'menu_volunteer'.tr(),
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -165,19 +245,14 @@ class _DashboardState extends State<Dashboard> {
                         ),
                       ),
                     ),
-
-                    // Menu 3: Peta (DIBATASI OLEH PRIVASI)
                     _RoundMenu(
                       icon: FontAwesomeIcons.mapLocationDot,
-                      label: 'menu_map'.tr(), // <--- UPDATE BAHASA
+                      label: 'menu_map'.tr(),
                       onTap: () async {
-                        // 3. CEK SAKLAR PRIVASI SEBELUM BUKA PETA
                         final prefs = await SharedPreferences.getInstance();
                         bool isLocationAllowed =
                             prefs.getBool('privacy_location') ?? true;
-
                         if (!isLocationAllowed) {
-                          // Jika dimatikan, munculkan peringatan
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -188,10 +263,8 @@ class _DashboardState extends State<Dashboard> {
                               ),
                             );
                           }
-                          return; // JANGAN PINDAH HALAMAN
+                          return;
                         }
-
-                        // Jika hidup, baru pindah
                         if (context.mounted) {
                           Navigator.push(
                             context,
@@ -208,7 +281,6 @@ class _DashboardState extends State<Dashboard> {
 
               const SizedBox(height: 24),
 
-              // LAPORAN DAERAH
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: padding),
                 child: const _ReportList(),
@@ -223,13 +295,10 @@ class _DashboardState extends State<Dashboard> {
   }
 }
 
-// =============================
-// HEADER WIDGET
-// =============================
+// HEADER
 class _DashboardHeader extends StatelessWidget {
   final String userName;
   const _DashboardHeader({required this.userName});
-
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -263,24 +332,20 @@ class _DashboardHeader extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const NotificationPage()),
-                  );
-                },
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationPage()),
+                ),
                 icon: const Icon(Icons.notifications_none, color: Colors.white),
               ),
               const SizedBox(width: 6),
               GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ProfileSettingsScreen(),
-                    ),
-                  );
-                },
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProfileSettingsScreen(),
+                  ),
+                ),
                 child: const CircleAvatar(
                   radius: 16,
                   backgroundColor: Colors.white24,
@@ -298,7 +363,7 @@ class _DashboardHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'dash_hi'.tr(), // <--- UPDATE BAHASA ("Hai")
+                'dash_hi'.tr(),
                 style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
               ),
               const SizedBox(height: 2),
@@ -312,8 +377,7 @@ class _DashboardHeader extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'dash_subtitle'
-                    .tr(), // <--- UPDATE BAHASA ("Laporkan masalah...")
+                'dash_subtitle'.tr(),
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 26,
@@ -364,7 +428,7 @@ class _DashboardHeader extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       decoration: InputDecoration.collapsed(
-                        hintText: 'search_hint'.tr(), // <--- UPDATE BAHASA
+                        hintText: 'search_hint'.tr(),
                         hintStyle: GoogleFonts.poppins(
                           color: const Color(0xFF9AA3B2),
                         ),
@@ -381,13 +445,10 @@ class _DashboardHeader extends StatelessWidget {
   }
 }
 
-// =============================
-// COORDINATE WIDGET
-// =============================
+// KOORDINAT
 class _CoordinateRow extends StatelessWidget {
   final String coordinate;
   const _CoordinateRow({required this.coordinate});
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -418,20 +479,16 @@ class _CoordinateRow extends StatelessWidget {
   }
 }
 
-// =============================
-// MENU BUTTON WIDGET
-// =============================
+// MENU BUTTON
 class _RoundMenu extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-
   const _RoundMenu({
     required this.icon,
     required this.label,
     required this.onTap,
   });
-
   @override
   Widget build(BuildContext context) {
     return Expanded(
@@ -473,12 +530,9 @@ class _RoundMenu extends StatelessWidget {
   }
 }
 
-// =============================
-// LIST LAPORAN REAL-TIME (FIRESTORE)
-// =============================
+// LIST LAPORAN
 class _ReportList extends StatelessWidget {
   const _ReportList();
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -499,15 +553,13 @@ class _ReportList extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'recent_reports'.tr(), // <--- UPDATE BAHASA
+            'recent_reports'.tr(),
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 12),
-
-          // --- STREAM BUILDER ---
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('laporan')
@@ -515,26 +567,20 @@ class _ReportList extends StatelessWidget {
                 .limit(3)
                 .snapshots(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              if (snapshot.connectionState == ConnectionState.waiting)
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(20),
                     child: CircularProgressIndicator(),
                   ),
                 );
-              }
-              if (snapshot.hasError) {
-                return const Text("Gagal memuat data");
-              }
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              if (snapshot.hasError) return const Text("Gagal memuat data");
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
                 return const Padding(
                   padding: EdgeInsets.all(20),
                   child: Text("Belum ada laporan."),
                 );
-              }
-
               final docs = snapshot.data!.docs;
-
               return ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -542,8 +588,6 @@ class _ReportList extends StatelessWidget {
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final data = docs[index].data() as Map<String, dynamic>;
-
-                  // Parse Koordinat
                   String coordStr = '-';
                   if (data['koordinat'] is GeoPoint) {
                     GeoPoint gp = data['koordinat'];
@@ -552,28 +596,27 @@ class _ReportList extends StatelessWidget {
                   } else if (data['koordinat'] != null) {
                     coordStr = data['koordinat'].toString();
                   }
-
-                  // Parse Status & Warna
                   String status = data['status'] ?? 'Menunggu';
-                  Color statusColor = const Color(0xFFE35247); // Merah
-                  Color bgColor = const Color(0xFFFEECEB);
-
+                  Color statusColor = Colors.orange;
+                  Color bgColor = Colors.orange.shade50;
                   if (status == 'Selesai') {
-                    statusColor = const Color(0xFF21B356); // Hijau
+                    statusColor = const Color(0xFF21B356);
                     bgColor = const Color(0xFFDFF7E6);
-                  } else if (status == 'Sedang Proses') {
-                    statusColor = const Color(0xFF2E7DF6); // Biru
+                  } else if (status == 'Diproses' ||
+                      status == 'Sedang Proses') {
+                    statusColor = const Color(0xFF2E7DF6);
                     bgColor = const Color(0xFFBEE3FF);
+                  } else if (status == 'Ditolak') {
+                    statusColor = Colors.red;
+                    bgColor = Colors.red.shade50;
                   }
-
-                  String jenis = data['jenis_masalah'] ?? 'Laporan';
-
+                  String judul = data['judul'] ?? 'Laporan';
                   return _ReportRow(
                     color: bgColor,
                     statusColor: statusColor,
                     coord: coordStr,
                     statusLabel: status,
-                    distance: jenis,
+                    distance: judul,
                   );
                 },
               );
@@ -585,16 +628,12 @@ class _ReportList extends StatelessWidget {
   }
 }
 
-// =============================
-// ROW ITEM LAPORAN
-// =============================
 class _ReportRow extends StatelessWidget {
   final Color color;
   final Color statusColor;
   final String coord;
   final String statusLabel;
   final String distance;
-
   const _ReportRow({
     required this.color,
     required this.statusColor,
@@ -602,7 +641,6 @@ class _ReportRow extends StatelessWidget {
     required this.statusLabel,
     required this.distance,
   });
-
   @override
   Widget build(BuildContext context) {
     return Row(
