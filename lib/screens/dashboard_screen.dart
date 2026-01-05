@@ -14,6 +14,7 @@ import 'package:flutter_application_1/screens/notification_screen.dart';
 import 'package:flutter_application_1/screens/profile_settings_screen.dart';
 import 'package:flutter_application_1/screens/report_screen.dart';
 import 'package:flutter_application_1/screens/admin_reportlist_screen.dart';
+import 'package:flutter_application_1/screens/admin_volunteer_list_screen.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -104,15 +105,13 @@ class _DashboardState extends State<Dashboard> {
     final width = MediaQuery.of(context).size.width;
     final padding = width * 0.05;
 
-    // --- LOGIKA TEXT DASHBOARD ---
-    // Tentukan Judul dan Deskripsi Tombol berdasarkan Role
     String menuTitleKey = _userRole == 'volunteer'
-        ? 'btn_volunteer_panel' // "Panel Relawan"
-        : 'btn_admin_panel'; // "Panel Admin"
+        ? 'btn_volunteer_panel'
+        : 'btn_admin_panel';
 
     String menuDescKey = _userRole == 'volunteer'
-        ? 'desc_volunteer_panel' // "Pantau laporan masuk"
-        : 'desc_admin_panel'; // "Kelola semua laporan warga"
+        ? 'desc_volunteer_panel'
+        : 'desc_admin_panel';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F8),
@@ -139,13 +138,100 @@ class _DashboardState extends State<Dashboard> {
                   padding: EdgeInsets.symmetric(horizontal: padding),
                   child: GestureDetector(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              AdminReportListScreen(userRole: _userRole),
-                        ),
-                      );
+                      // 2. LOGIKA BARU UNTUK ADMIN
+                      if (_userRole == 'admin') {
+                        // Tampilkan Menu Pilihan
+                        showModalBottomSheet(
+                          context: context,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(20),
+                            ),
+                          ),
+                          builder: (context) {
+                            return Wrap(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Center(
+                                    child: Container(
+                                      width: 40,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                ListTile(
+                                  leading: const Icon(
+                                    Icons.report_problem,
+                                    color: Colors.blue,
+                                  ),
+                                  title: Text(
+                                    'Kelola Laporan Warga',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    'Lihat dan update status laporan',
+                                    style: GoogleFonts.poppins(fontSize: 12),
+                                  ),
+                                  onTap: () {
+                                    Navigator.pop(context); // Tutup menu
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => AdminReportListScreen(
+                                          userRole: _userRole,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                ListTile(
+                                  leading: const Icon(
+                                    Icons.people,
+                                    color: Colors.green,
+                                  ),
+                                  title: Text(
+                                    'Kelola Pendaftaran Relawan',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    'Verifikasi pendaftar baru',
+                                    style: GoogleFonts.poppins(fontSize: 12),
+                                  ),
+                                  onTap: () {
+                                    Navigator.pop(context); // Tutup menu
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const AdminVolunteerListScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 30),
+                              ],
+                            );
+                          },
+                        );
+                      } else {
+                        // Jika Relawan Biasa, langsung ke Laporan
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                AdminReportListScreen(userRole: _userRole),
+                          ),
+                        );
+                      }
                     },
                     child: Container(
                       width: double.infinity,
@@ -185,7 +271,6 @@ class _DashboardState extends State<Dashboard> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // JUDUL TOMBOL SESUAI ROLE
                                 Text(
                                   menuTitleKey.tr(),
                                   style: GoogleFonts.poppins(
@@ -194,7 +279,6 @@ class _DashboardState extends State<Dashboard> {
                                     fontSize: 16,
                                   ),
                                 ),
-                                // DESKRIPSI TOMBOL SESUAI ROLE
                                 Text(
                                   menuDescKey.tr(),
                                   style: GoogleFonts.poppins(
@@ -215,6 +299,8 @@ class _DashboardState extends State<Dashboard> {
                     ),
                   ),
                 ),
+
+              // ... (SISA KODE KE BAWAH SAMA PERSIS) ...
 
               // ==========================================
               // MENU UTAMA (Lapor, Relawan, Peta)

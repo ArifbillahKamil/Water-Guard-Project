@@ -1,14 +1,14 @@
 import 'dart:io';
-import 'dart:convert'; // Untuk mengubah file jadi Base64
+import 'dart:convert'; // Wajib untuk Base64
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Auth
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
-import 'package:shared_preferences/shared_preferences.dart'; // 1. WAJIB IMPORT INI
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter_application_1/screens/dashboard_screen.dart';
-import '../widgets/double_wave_header.dart';
+import '../widgets/double_wave_header.dart'; // Pastikan path ini sesuai dengan projectmu
 
 class WorkerSignUpScreen extends StatefulWidget {
   const WorkerSignUpScreen({super.key});
@@ -28,7 +28,7 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
 
   File? _cvFile;
   String? cvFileName;
-  bool _isLoading = false; // Status Loading
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -40,46 +40,57 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
     super.dispose();
   }
 
-  // --- FUNGSI PILIH FILE (DENGAN CEK PRIVASI) ---
+  // --- FUNGSI PILIH FILE (DENGAN PENGECEKAN KETAT) ---
   Future<void> _pickCVFile() async {
-    // 1. CEK SAKLAR PRIVASI DULU
     final prefs = await SharedPreferences.getInstance();
-    // Ambil status 'privacy_data' (sesuai yang diset di PrivasiPage)
     bool isDataAllowed = prefs.getBool('privacy_data') ?? true;
 
-    // 2. JIKA DIMATIKAN, STOP PROSES
     if (!isDataAllowed) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Izin akses data dimatikan di menu Privasi.'),
             backgroundColor: Colors.orange,
-            duration: Duration(seconds: 3),
           ),
         );
       }
-      return; // Berhenti di sini, File Picker tidak akan terbuka
+      return;
     }
 
-    // 3. JIKA DIIZINKAN, LANJUT BUKA FILE PICKER
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx'],
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
       );
 
       if (result != null && result.files.single.path != null) {
-        // Cek ukuran file (Maksimal 1 MB agar aman di Firestore)
         File file = File(result.files.single.path!);
         int sizeInBytes = await file.length();
-        double sizeInMb = sizeInBytes / (1024 * 1024);
+        double sizeInKb = sizeInBytes / 1024;
 
-        if (sizeInMb > 1.0) {
+        // [PENGECEKAN 1] Tolak jika file kosong (0 byte)
+        if (sizeInBytes == 0) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Ukuran file terlalu besar (Maks 1MB)'),
+                content: Text(
+                  'File kosong (0 bytes)! Silakan pilih file lain.',
+                ),
                 backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+
+        // [PENGECEKAN 2] Tolak jika file > 500 KB
+        if (sizeInKb > 500) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('File terlalu besar! Maksimal 500 KB.'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 4),
               ),
             );
           }
@@ -92,9 +103,12 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('CV berhasil dipilih')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('CV berhasil dipilih (Valid)'),
+              backgroundColor: Colors.green,
+            ),
+          );
         }
       }
     } on PlatformException catch (e) {
@@ -104,13 +118,13 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
     }
   }
 
-  // --- FUNGSI DAFTAR RELAWAN (UPDATE: DENGAN NOTIFIKASI OTOMATIS) ---
+  // --- FUNGSI DAFTAR (DENGAN VALIDASI DATA FILE) ---
   Future<void> _submitVolunteer() async {
     if (!_formKey.currentState!.validate()) return;
     if (_cvFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Wajib upload CV (PDF/Word)'),
+          content: Text('Wajib upload CV'),
           backgroundColor: Colors.red,
         ),
       );
@@ -118,21 +132,33 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
     }
 
     User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan login terlebih dahulu.')),
-      );
-      return;
-    }
+    if (user == null) return;
 
     setState(() => _isLoading = true);
 
     try {
-      // Convert File
+      // 1. BACA FILE MENJADI BYTES
       List<int> fileBytes = await _cvFile!.readAsBytes();
+
+      // [PENGECEKAN 3] Pastikan hasil bacaan tidak kosong
+      if (fileBytes.isEmpty) {
+        throw Exception("Gagal membaca file (File kosong/rusak).");
+      }
+
+      // 2. KONVERSI KE BASE64 STRING
       String base64File = base64Encode(fileBytes);
 
-      // A. SIMPAN DATA RELAWAN (SEPERTI BIASA)
+      // [PENGECEKAN 4] Pastikan hasil konversi string ada isinya
+      if (base64File.isEmpty) {
+        throw Exception("Gagal mengonversi file ke teks.");
+      }
+
+      // Debugging: Cek panjang string di console
+      debugPrint(
+        "Info File: Nama=$cvFileName, Panjang Base64=${base64File.length}",
+      );
+
+      // 3. SIMPAN KE FIRESTORE
       await FirebaseFirestore.instance.collection('pendaftaran_relawan').add({
         'uid': user.uid,
         'email_akun': user.email,
@@ -142,19 +168,21 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
         'no_hp': phoneController.text,
         'email_kontak': emailController.text,
         'nama_file_cv': cvFileName,
+
+        // FIELD UTAMA: Pastikan variabel ini yang dikirim
         'file_cv_base64': base64File,
+
         'tgl_daftar': FieldValue.serverTimestamp(),
         'status': 'Menunggu Review',
       });
 
-      // B. (BARU) BUAT NOTIFIKASI OTOMATIS
+      // 4. BUAT NOTIFIKASI
       await FirebaseFirestore.instance.collection('notifikasi').add({
         'uid_user': user.uid,
         'judul': 'Pendaftaran Sukarelawan',
         'sub_judul': 'Berkas Diterima',
-        'pesan':
-            'Halo ${nameController.text}, berkas pendaftaranmu sebagai sukarelawan sudah kami terima. Harap menunggu proses seleksi selanjutnya.',
-        'tipe': 'info', // Warna Biru
+        'pesan': 'Halo ${nameController.text}, berkasmu aman diterima sistem.',
+        'tipe': 'info',
         'tanggal': FieldValue.serverTimestamp(),
         'is_read': false,
       });
@@ -162,17 +190,13 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Pendaftaran Berhasil Dikirim!'),
+            content: Text('Sukses Mendaftar!'),
             backgroundColor: Colors.green,
           ),
         );
 
         // Reset Form
         nameController.clear();
-        dobController.clear();
-        educationController.clear();
-        phoneController.clear();
-        emailController.clear();
         setState(() {
           _cvFile = null;
           cvFileName = null;
@@ -185,10 +209,11 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
         );
       }
     } catch (e) {
+      debugPrint("Error Submit: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mendaftar: $e'),
+            content: Text('Gagal Mendaftar: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -212,7 +237,6 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
             width: double.infinity,
             child: DoubleWaveHeader(),
           ),
-
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
@@ -222,160 +246,56 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                 24,
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 50, bottom: 12),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 50, bottom: 12),
                     child: Text(
                       "Mendaftar Sukarelawan",
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF4894FE),
-                        shadows: const [
-                          Shadow(
-                            offset: Offset(1, 3),
-                            blurRadius: 3,
-                            color: Colors.black26,
-                          ),
-                        ],
+                        color: Color(0xFF4894FE),
                       ),
                     ),
                   ),
-
                   Form(
                     key: _formKey,
                     child: Column(
                       children: [
-                        TextFormField(
-                          controller: nameController,
-                          decoration: InputDecoration(
-                            labelText: "Nama",
-                            prefixIcon: const Icon(Icons.person_outline),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 12,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (val) =>
-                              val!.isEmpty ? "Wajib diisi" : null,
+                        _buildTextField(
+                          nameController,
+                          "Nama",
+                          Icons.person_outline,
                         ),
                         const SizedBox(height: 12),
-
-                        TextFormField(
-                          controller: dobController,
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            labelText: "Tanggal lahir",
-                            prefixIcon: const Icon(
-                              Icons.calendar_today_outlined,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.date_range),
-                              onPressed: () async {
-                                final picked = await showDatePicker(
-                                  context: context,
-                                  initialDate: DateTime(2000),
-                                  firstDate: DateTime(1900),
-                                  lastDate: DateTime.now(),
-                                );
-                                if (picked != null) {
-                                  setState(() {
-                                    dobController.text =
-                                        "${picked.day}/${picked.month}/${picked.year}";
-                                  });
-                                }
-                              },
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 12,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (val) =>
-                              val!.isEmpty ? "Wajib diisi" : null,
+                        _buildDateField(context),
+                        const SizedBox(height: 12),
+                        _buildTextField(
+                          educationController,
+                          "Pendidikan",
+                          Icons.school_outlined,
                         ),
                         const SizedBox(height: 12),
-
-                        TextFormField(
-                          controller: educationController,
-                          decoration: InputDecoration(
-                            labelText: "Pendidikan",
-                            prefixIcon: const Icon(Icons.school_outlined),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 12,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (val) =>
-                              val!.isEmpty ? "Wajib diisi" : null,
+                        _buildTextField(
+                          phoneController,
+                          "Nomor telepon",
+                          Icons.phone_outlined,
+                          isPhone: true,
                         ),
                         const SizedBox(height: 12),
-
-                        TextFormField(
-                          controller: phoneController,
-                          keyboardType: TextInputType.phone,
-                          decoration: InputDecoration(
-                            labelText: "Nomor telepon",
-                            prefixIcon: const Icon(Icons.phone_outlined),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 12,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (val) =>
-                              val!.isEmpty ? "Wajib diisi" : null,
-                        ),
-                        const SizedBox(height: 12),
-
-                        TextFormField(
-                          controller: emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            labelText: "Email",
-                            prefixIcon: const Icon(Icons.email_outlined),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 12,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (val) => (!val!.contains('@'))
-                              ? "Email tidak valid"
-                              : null,
+                        _buildTextField(
+                          emailController,
+                          "Email",
+                          Icons.email_outlined,
+                          isEmail: true,
                         ),
                         const SizedBox(height: 18),
 
-                        // --- TOMBOL UPLOAD (DENGAN CEK PRIVASI) ---
+                        // --- TOMBOL UPLOAD ---
                         Row(
                           children: [
                             ElevatedButton.icon(
-                              onPressed:
-                                  _pickCVFile, // Panggil fungsi yang sudah dimodifikasi
+                              onPressed: _pickCVFile,
                               icon: const Icon(
                                 Icons.upload_file,
                                 color: Color(0xFF4894FE),
@@ -401,7 +321,7 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    cvFileName ?? "Format: PDF/Doc (Max 1MB)",
+                                    cvFileName ?? "PDF/Doc/Img (<500KB)",
                                     style: TextStyle(
                                       color: _cvFile != null
                                           ? Colors.black87
@@ -416,7 +336,7 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                                   ),
                                   if (_cvFile != null)
                                     const Text(
-                                      "Siap diunggah",
+                                      "Siap dikirim",
                                       style: TextStyle(
                                         fontSize: 10,
                                         color: Colors.green,
@@ -434,6 +354,7 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                         ),
                         const SizedBox(height: 22),
 
+                        // --- TOMBOL DAFTAR ---
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -444,7 +365,6 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              elevation: 4,
                             ),
                             child: _isLoading
                                 ? const SizedBox(
@@ -472,26 +392,76 @@ class _WorkerSignUpScreenState extends State<WorkerSignUpScreen> {
               ),
             ),
           ),
-
           Positioned(
             top: 40,
             left: 16,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const Dashboard()),
-                  );
-                }
-              },
+              onPressed: () => Navigator.pop(context),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // --- WIDGET HELPER ---
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    bool isPhone = false,
+    bool isEmail = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: isPhone
+          ? TextInputType.phone
+          : (isEmail ? TextInputType.emailAddress : TextInputType.text),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.all(12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      validator: (val) {
+        if (val == null || val.isEmpty) return "Wajib diisi";
+        if (isEmail && !val.contains('@')) return "Email tidak valid";
+        return null;
+      },
+    );
+  }
+
+  Widget _buildDateField(BuildContext context) {
+    return TextFormField(
+      controller: dobController,
+      readOnly: true,
+      decoration: InputDecoration(
+        labelText: "Tanggal lahir",
+        prefixIcon: const Icon(Icons.calendar_today_outlined),
+        suffixIcon: const Icon(Icons.date_range),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.all(12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: DateTime(2000),
+          firstDate: DateTime(1900),
+          lastDate: DateTime.now(),
+        );
+        if (picked != null) {
+          setState(
+            () => dobController.text =
+                "${picked.day}/${picked.month}/${picked.year}",
+          );
+        }
+      },
+      validator: (val) => val!.isEmpty ? "Wajib diisi" : null,
     );
   }
 }
