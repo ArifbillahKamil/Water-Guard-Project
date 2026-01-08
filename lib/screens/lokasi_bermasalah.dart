@@ -30,7 +30,6 @@ class _PetaLaporanScreenState extends State<PetaLaporanScreen> {
   }
 
   // Fungsi Helper: Konversi Status String ke Enum (Agar DetailLaporanSheet tidak error)
-  // Asumsi: LaporanMasalah model kamu pakai Enum. Jika pakai String, fungsi ini tidak perlu.
   StatusLaporan _parseStatus(String status) {
     if (status == 'Selesai') return StatusLaporan.selesai;
     if (status == 'Sedang Proses') return StatusLaporan.ditangani;
@@ -78,13 +77,11 @@ class _PetaLaporanScreenState extends State<PetaLaporanScreen> {
               String statusString = data['status'] ?? 'Menunggu Konfirmasi';
 
               // Buat Objek Laporan (untuk dipass ke DetailSheet)
-              // Sesuaikan field ini dengan LaporanMasalah model kamu
               LaporanMasalah laporanObj = LaporanMasalah(
                 id: doc.id,
                 deskripsi: data['deskripsi'] ?? '-',
                 koordinat: point,
                 status: _parseStatus(statusString),
-                // Tambahkan field lain jika modelmu butuh (misal judul, fotoUrl, dll)
               );
 
               // Buat Marker
@@ -120,11 +117,7 @@ class _PetaLaporanScreenState extends State<PetaLaporanScreen> {
 
           // 5. Tampilkan Peta
           return FlutterMap(
-            options: MapOptions(
-              initialCenter:
-                  _posisiAwal, // Bisa diubah agar center ke marker pertama
-              initialZoom: 13.0,
-            ),
+            options: MapOptions(initialCenter: _posisiAwal, initialZoom: 13.0),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',

@@ -300,8 +300,6 @@ class _DashboardState extends State<Dashboard> {
                   ),
                 ),
 
-              // ... (SISA KODE KE BAWAH SAMA PERSIS) ...
-
               // ==========================================
               // MENU UTAMA (Lapor, Relawan, Peta)
               // ==========================================
